@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<!--
+  NovaOS v1.0
+  Copyright (c) 2026 NovaDev. All rights reserved.
+
+  PROPRIETARY SOFTWARE — NOT FOR REDISTRIBUTION.
+  This software is provided for personal use only.
+  Redistribution, modification, or commercial use without
+  explicit written permission is prohibited.
+
+  Unofficial web simulation. Not affiliated with Microsoft,
+  Apple, or any other company. All trademarks belong to their
+  respective owners.
+-->
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="NovaDev">
+<meta name="copyright" content="© 2026 NovaDev">
+<meta name="license" content="Proprietary - All Rights Reserved">
+<title>NovaOS v1.0</title>
+<style>
+:root{
+  --accent:#0a84ff;
+  --bg-window:#1c1c1e;
+  --bg-panel:rgba(28,28,30,.75);
+  --bg-desktop:#000;
+  --text:#ffffff;
+  --text-gray:rgba(255,255,255,.6);
+  --border:rgba(255,255,255,.09);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.2);
+  --shadow-md:0 8px 24px rgba(0,0,0,.3);
+  --shadow-xl:0 24px 64px rgba(0,0,0,.4);
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
+  --tray-h:48px;
+  --wallpaper:url('https://images.unsplash.com/photo-1451177559227-676f22e9883b?w=1920&q=80');
+  --icon-size:72px;
+  --anim:1;
+}
+[data-theme="light"]{
+  --bg-window:#f2f2f7;
+  --bg-panel:rgba(250,250,252,.82);
+  --text:#1c1c1e;
+  --text-gray:rgba(0,0,0,.5);
+  --border:rgba(0,0,0,.08);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.1);
+  --shadow-md:0 8px 24px rgba(0,0,0,.15);
+  --shadow-xl:0 24px 64px rgba(0,0,0,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--text);user-select:none;-webkit-user-select:none}
+body{background:#000}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(128,128,128,.4);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(128,128,128,.6)}
+
+/* Boot Screen */
+#boot{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
+.boot-logo{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;width:64px;height:64px;animation:bootLogo 1.5s ease-out}
+.boot-logo div{background:var(--accent);border-radius:4px;animation:bootTile 1.5s ease-out;box-shadow:0 0 12px var(--accent)}
+.boot-logo div:nth-child(1){animation-delay:0s}
+.boot-logo div:nth-child(2){animation-delay:.1s}
+.boot-logo div:nth-child(3){animation-delay:.2s}
+.boot-logo div:nth-child(4){animation-delay:.3s}
+@keyframes bootLogo{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes bootTile{0%{opacity:0}100%{opacity:1}}
+.boot-spinner{margin-top:32px;width:32px;height:32px;border:3px solid transparent;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.boot-text{position:absolute;bottom:60px;color:#666;font-size:14px;letter-spacing:.5px}
+
+/* Lock Screen */
+#lock{position:fixed;inset:0;background-size:cover;background-position:center;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .4s}
+#lock::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.3)}
+.lock-clock{font-size:120px;font-weight:100;letter-spacing:-2px;text-shadow:0 4px 24px rgba(0,0,0,.5);z-index:1}
+.lock-date{font-size:22px;font-weight:300;margin-top:8px;text-shadow:0 2px 12px rgba(0,0,0,.5);z-index:1}
+.lock-weather{position:absolute;bottom:100px;right:60px;z-index:1;background:rgba(0,0,0,.3);backdrop-filter:blur(20px);padding:16px 24px;border-radius:14px;text-align:center}
+.lock-weather .temp{font-size:36px;font-weight:600}
+.lock-weather .city{font-size:14px;opacity:.8}
+.lock-hint{position:absolute;bottom:60px;z-index:1;font-size:16px;opacity:.7;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.9}}
+
+/* Desktop */
+#desktop{position:fixed;inset:0;background:var(--wallpaper);background-size:cover;background-position:center;display:none;overflow:hidden}
+#desktop-icons{position:absolute;top:12px;left:12px;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:4px;height:calc(100% - var(--tray-h) - 24px);max-width:100%}
+.desk-icon{width:var(--icon-size);padding:8px 4px;border-radius:6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:background .15s}
+.desk-icon .emoji{font-size:36px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+.desk-icon .label{font-size:12px;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.8);max-width:var(--icon-size);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.desk-icon:hover{background:rgba(255,255,255,.1)}
+.desk-icon.selected{background:rgba(10,132,255,.3);outline:1px solid rgba(10,132,255,.6)}
+.desk-icon.selected .emoji{transform:scale(1.05)}
+
+/* Windows */
+.window{position:absolute;background:var(--bg-window);border-radius:10px;box-shadow:var(--shadow-xl);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-width:300px;min-height:200px;transition:opacity .22s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1)}
+.window.opening{opacity:0;transform:scale(.96) translateY(8px)}
+.window.minimized{display:none}
+.window.maximized{border-radius:0}
+.window.inactive{box-shadow:var(--shadow-md);opacity:.96}
+.win-titlebar{height:36px;display:flex;align-items:center;padding:0 8px;gap:8px;background:var(--bg-panel);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);cursor:default;flex-shrink:0}
+.win-titlebar .win-icon{font-size:16px}
+.win-titlebar .win-title{font-size:13px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.win-btns{display:flex;gap:4px}
+.win-btn{width:32px;height:28px;border:none;background:transparent;color:var(--text);border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .15s,background .15s}
+.win-btn:hover{background:rgba(255,255,255,.1);opacity:1}
+.win-btn.close:hover{background:#e81123;color:#fff}
+.win-body{flex:1;overflow:auto;position:relative}
+.resize-handle{position:absolute;z-index:10}
+.rh-e{right:0;top:0;width:6px;height:100%;cursor:e-resize}
+.rh-w{left:0;top:0;width:6px;height:100%;cursor:w-resize}
+.rh-s{bottom:0;left:0;width:100%;height:6px;cursor:s-resize}
+.rh-n{top:0;left:0;width:100%;height:6px;cursor:n-resize}
+.rh-se{bottom:0;right:0;width:12px;height:12px;cursor:se-resize}
+.rh-sw{bottom:0;left:0;width:12px;height:12px;cursor:sw-resize}
+.rh-ne{top:0;right:0;width:12px;height:12px;cursor:ne-resize}
+.rh-nw{top:0;left:0;width:12px;height:12px;cursor:nw-resize}
+
+/* Taskbar */
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:var(--tray-h);background:var(--bg-panel);backdrop-filter:blur(40px);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 8px;gap:6px;z-index:5000}
+.tb-start{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;width:32px;height:32px;padding:2px;cursor:pointer;transition:transform .15s}
+.tb-start div{background:var(--accent);border-radius:3px;transition:transform .15s}
+.tb-start:hover{transform:scale(1.1)}
+.tb-search{height:34px;border:1px solid var(--border);border-radius:17px;background:rgba(255,255,255,.06);display:flex;align-items:center;gap:8px;padding:0 14px;width:200px;cursor:text;transition:width .2s}
+.tb-search:focus-within{width:260px;border-color:var(--accent)}
+.tb-search input{background:none;border:none;outline:none;color:var(--text);font-size:13px;flex:1}
+.tb-search .ico{font-size:14px;opacity:.6}
+.tb-apps{display:flex;gap:4px;margin-left:8px}
+.tb-app{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;position:relative;transition:background .15s}
+.tb-app:hover{background:rgba(255,255,255,.08)}
+.tb-app.active::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:16px;height:3px;background:var(--accent);border-radius:2px}
+.tb-app.minimized::after{width:6px;height:3px}
+.tb-tray{margin-left:auto;display:flex;align-items:center;gap:4px;height:40px;padding:0 4px}
+.tb-tray .tray-ico{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:background .15s;position:relative}
+.tb-tray .tray-ico:hover{background:rgba(255,255,255,.1)}
+.tb-clock{padding:0 10px;height:36px;border-radius:8px;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;transition:background .15s;font-size:12px;line-height:1.3}
+.tb-clock:hover{background:rgba(255,255,255,.1)}
+.tb-bell-badge{position:absolute;top:2px;right:2px;min-width:14px;height:14px;background:#e81123;border-radius:7px;font-size:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;padding:0 3px}
+.tb-bell-badge.hidden{display:none}
+
+/* Start Menu */
+#start-menu{position:fixed;bottom:calc(var(--tray-h) + 8px);left:50%;transform:translateX(-50%);width:640px;max-height:560px;background:var(--bg-panel);backdrop-filter:blur(40px);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-xl);z-index:6000;display:none;flex-direction:column;padding:24px;transition:transform .2s,opacity .2s}
+#start-menu.show{display:flex;animation:slideUp .2s ease-out}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.sm-search{height:40px;border:1px solid var(--border);border-radius:20px;background:rgba(255,255,255,.06);display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:16px}
+.sm-search input{background:none;border:none;outline:none;color:var(--text);font-size:14px;flex:1}
+.sm-search .ico{opacity:.5}
+.sm-section-title{font-size:13px;font-weight:600;margin-bottom:12px;opacity:.8}
+.sm-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;overflow-y:auto;flex:1}
+.sm-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:10px;cursor:pointer;transition:background .15s}
+.sm-item:hover{background:rgba(255,255,255,.08)}
+.sm-item .emoji{font-size:32px}
+.sm-item .name{font-size:11px;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sm-power{margin-top:16px;display:flex;justify-content:flex-end;gap:8px}
+.sm-power-btn{width:36px;height:36px;border-radius:8px;border:none;background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-size:18px;transition:background .15s}
+.sm-power-btn:hover{background:rgba(255,255,255,.12)}
+
+/* Flyouts */
+.flyout{position:fixed;bottom:calc(var(--tray-h) + 8px);right:8px;background:var(--bg-panel);backdrop-filter:blur(40px);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-xl);z-index:6000;display:none;padding:16px;min-width:280px}
+.flyout.show{display:block;animation:slideUp .2s ease-out}
+#flyout-cal{width:340px}
+.flyout-big-time{font-size:42px;font-weight:300;margin-bottom:4px}
+.flyout-date{font-size:14px;opacity:.7;margin-bottom:12px}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cal-nav button{background:none;border:none;color:var(--text);font-size:16px;cursor:pointer;opacity:.7}
+.cal-nav span{font-size:13px;font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dow{font-size:11px;text-align:center;opacity:.5;padding:4px 0}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:13px;cursor:pointer}
+.cal-day:hover{background:rgba(255,255,255,.1)}
+.cal-day.today{background:var(--accent);color:#fff;font-weight:600}
+.cal-day.other-month{opacity:.3}
+#flyout-vol{width:320px}
+.vol-top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.vol-emoji{font-size:28px}
+.vol-slider{width:100%;height:6px;background:rgba(255,255,255,.15);border-radius:3px;position:relative;cursor:pointer}
+.vol-fill{height:100%;background:var(--accent);border-radius:3px;width:50%}
+.vol-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+#flyout-notif{width:380px;max-height:500px;display:flex;flex-direction:column}
+.notif-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.notif-header h3{font-size:15px;font-weight:600}
+.notif-clear{background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer}
+.notif-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.notif-tile{background:rgba(255,255,255,.06);border-radius:8px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:background .15s}
+.notif-tile:hover{background:rgba(255,255,255,.1)}
+.notif-tile.active{background:var(--accent);color:#fff}
+.notif-tile .emoji{font-size:20px}
+.notif-tile .lbl{font-size:11px}
+.notif-sliders{margin-bottom:12px}
+.notif-slider-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.notif-slider-row .emoji{font-size:16px;opacity:.7}
+.notif-list{flex:1;overflow-y:auto;max-height:200px}
+.notif-item{background:rgba(255,255,255,.06);border-radius:8px;padding:10px;margin-bottom:6px;display:flex;gap:10px}
+.notif-item .emoji{font-size:20px;flex-shrink:0}
+.notif-item .body{flex:1}
+.notif-item .title{font-size:13px;font-weight:600}
+.notif-item .text{font-size:12px;opacity:.7}
+.notif-item .time{font-size:10px;opacity:.5}
+.notif-empty{text-align:center;opacity:.5;font-size:13px;padding:20px}
+
+/* Context Menu */
+#ctx-menu{position:fixed;background:var(--bg-panel);backdrop-filter:blur(40px);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-xl);z-index:8000;padding:6px;min-width:180px;display:none}
+#ctx-menu.show{display:block}
+.ctx-item{padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .12s}
+.ctx-item:hover{background:var(--accent);color:#fff}
+.ctx-sep{height:1px;background:var(--border);margin:4px 8px}
+
+/* Notifications (Toast) */
+#notif-container{position:fixed;bottom:calc(var(--tray-h) + 16px);right:16px;z-index:7000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--bg-panel);backdrop-filter:blur(40px);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);padding:14px 18px;display:flex;gap:12px;min-width:280px;max-width:360px;pointer-events:auto;animation:slideInRight .3s ease-out}
+@keyframes slideInRight{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.hide{animation:slideOutRight .3s ease-in forwards}
+@keyframes slideOutRight{to{transform:translateX(400px);opacity:0}}
+.toast .emoji{font-size:22px;flex-shrink:0}
+.toast .body .title{font-size:13px;font-weight:600}
+.toast .body .text{font-size:12px;opacity:.7;margin-top:2px}
+
+/* Snap Preview */
+#snap-preview{position:fixed;background:rgba(10,132,255,.2);border:2px solid var(--accent);border-radius:10px;z-index:100;pointer-events:none;display:none;transition:all .15s}
+
+/* Power Screen */
+#power-screen{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .5s}
+#power-screen.show{opacity:1}
+
+/* Common App Styles */
+.app-pad{padding:16px}
+.btn{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);font-size:13px;cursor:pointer;transition:background .15s}
+.btn:hover{background:rgba(255,255,255,.12)}
+.btn-accent{background:var(--accent);border-color:var(--accent)}
+.btn-accent:hover{filter:brightness(1.1)}
+.btn-danger{background:#e81123;border-color:#e81123}
+.input{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);font-size:13px;outline:none}
+.input:focus{border-color:var(--accent)}
+
+/* File Explorer */
+.fe-root{display:flex;height:100%}
+.fe-sidebar{width:200px;padding:12px 8px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.fe-sidebar-item{padding:8px 12px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .12s;display:flex;gap:8px;align-items:center}
+.fe-sidebar-item:hover,.fe-sidebar-item.active{background:rgba(255,255,255,.1)}
+.fe-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.fe-crumb{padding:8px 16px;border-bottom:1px solid var(--border);font-size:13px;opacity:.7;display:flex;gap:6px;align-items:center}
+.fe-grid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;align-content:flex-start}
+.fe-file{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;border-radius:8px;cursor:pointer;transition:background .12s}
+.fe-file:hover{background:rgba(255,255,255,.08)}
+.fe-file .emoji{font-size:40px}
+.fe-file .name{font-size:12px;text-align:center;word-break:break-word}
+
+/* Notepad */
+.np-root{display:flex;flex-direction:column;height:100%}
+.np-menu{display:flex;gap:2px;padding:4px;border-bottom:1px solid var(--border);flex-shrink:0}
+.np-menu-item{padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer}
+.np-menu-item:hover{background:rgba(255,255,255,.1)}
+.np-textarea{flex:1;border:none;outline:none;resize:none;padding:16px;font-family:'Cascadia Code','Consolas','Courier New',monospace;font-size:14px;background:var(--bg-window);color:var(--text);line-height:1.6}
+
+/* Calculator */
+.calc-root{display:flex;flex-direction:column;height:100%;padding:12px}
+.calc-display{flex:1;min-height:80px;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;padding:16px}
+.calc-prev{font-size:14px;opacity:.6;min-height:20px}
+.calc-cur{font-size:40px;font-weight:300;word-break:break-all;text-align:right}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calc-btn{padding:16px;border-radius:10px;border:none;font-size:18px;cursor:pointer;transition:filter .1s,background .12s;background:rgba(255,255,255,.08);color:var(--text)}
+.calc-btn:hover{filter:brightness(1.2)}
+.calc-btn:active{filter:brightness(.8)}
+.calc-btn.op{background:rgba(10,132,255,.2);color:var(--accent)}
+.calc-btn.eq{background:var(--accent);color:#fff}
+
+/* Terminal */
+.term-root{height:100%;background:#0c0c0c;color:#e0e0e0;font-family:'Cascadia Code','Consolas','Courier New',monospace;font-size:13px;padding:12px;overflow-y:auto}
+.term-output{white-space:pre-wrap;line-height:1.5}
+.term-input-line{display:flex;gap:4px}
+.term-prompt{color:var(--accent)}
+.term-input{background:none;border:none;outline:none;color:#e0e0e0;font-family:inherit;font-size:13px;flex:1}
+.term-cmd{color:#fff}
+.term-info{color:#5fa}
+.term-err{color:#f55}
+
+/* Browser */
+.br-root{display:flex;flex-direction:column;height:100%}
+.br-toolbar{display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--border);align-items:center;flex-shrink:0}
+.br-btn{width:32px;height:32px;border-radius:6px;border:none;background:transparent;color:var(--text);font-size:16px;cursor:pointer;transition:background .12s}
+.br-btn:hover{background:rgba(255,255,255,.1)}
+.br-url{flex:1;height:34px;border-radius:17px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);padding:0 16px;outline:none;font-size:13px}
+.br-url:focus{border-color:var(--accent)}
+.br-home{flex:1;overflow-y:auto;padding:32px;display:flex;flex-direction:column;align-items:center}
+.br-logo{font-size:48px;font-weight:200;margin-bottom:24px;letter-spacing:-1px}
+.br-engines{display:flex;gap:12px;margin-bottom:32px}
+.br-engine{padding:12px 24px;border-radius:12px;border:1px solid var(--border);cursor:pointer;font-size:14px;transition:background .12s}
+.br-engine:hover{background:rgba(255,255,255,.08)}
+.br-links{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;width:100%;max-width:600px}
+.br-link{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;border-radius:12px;cursor:pointer;transition:background .12s}
+.br-link:hover{background:rgba(255,255,255,.08)}
+.br-link .emoji{font-size:28px}
+.br-link .name{font-size:12px}
+
+/* Bank */
+.bank-root{display:flex;flex-direction:column;height:100%}
+.bank-login{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px}
+.bank-login h2{font-size:24px;font-weight:300}
+.bank-tabs{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.bank-tab{padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;white-space:nowrap;transition:background .12s}
+.bank-tab.active{background:var(--accent);color:#fff}
+.bank-tab:hover:not(.active){background:rgba(255,255,255,.08)}
+.bank-content{flex:1;overflow-y:auto;padding:20px}
+.bank-card-grad{border-radius:16px;padding:20px;color:#fff;font-size:14px;position:relative;overflow:hidden;min-height:160px}
+.bank-card-grad .b-num{position:absolute;bottom:20px;font-size:16px;letter-spacing:2px}
+.bank-card-grad .b-bal{font-size:24px;font-weight:600;margin-bottom:8px}
+.bank-card-grad .b-type{position:absolute;top:20px;right:20px;font-size:12px;opacity:.8}
+
+/* App Store */
+.as-root{display:flex;flex-direction:column;height:100%}
+.as-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;flex-shrink:0}
+.as-cats{display:flex;gap:8px}
+.as-cat{padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);transition:background .12s}
+.as-cat.active{background:var(--accent);color:#fff}
+.as-grid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.as-card{border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center}
+.as-card .emoji{font-size:36px}
+.as-card .info{flex:1}
+.as-card .name{font-size:14px;font-weight:600}
+.as-card .desc{font-size:12px;opacity:.6}
+.as-card .size{font-size:11px;opacity:.5}
+.as-card .btn{font-size:12px;padding:6px 14px}
+
+/* Clocks */
+.clk-tabs{display:flex;gap:8px;padding:8px;border-bottom:1px solid var(--border)}
+.clk-tab{padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:background .12s}
+.clk-tab.active{background:var(--accent);color:#fff}
+.clk-analog{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px}
+
+/* QR */
+.qr-root{display:flex;flex-direction:column;height:100%;padding:16px;gap:16px;overflow-y:auto}
+.qr-types{display:flex;gap:8px;flex-wrap:wrap}
+.qr-type-btn{padding:8px 14px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);cursor:pointer;font-size:12px}
+.qr-type-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.qr-canvas-wrap{display:flex;justify-content:center}
+.qr-decoded{font-size:12px;opacity:.7;text-align:center;word-break:break-all}
+
+/* Music */
+.mu-root{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:24px}
+.mu-cover{width:200px;height:200px;border-radius:16px;box-shadow:var(--shadow-md)}
+.mu-info{text-align:center}
+.mu-title{font-size:20px;font-weight:600}
+.mu-artist{font-size:14px;opacity:.7}
+.mu-prog{width:100%;height:4px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
+.mu-prog-fill{height:100%;background:var(--accent);width:30%;transition:width .3s}
+.mu-times{display:flex;justify-content:space-between;width:100%;font-size:11px;opacity:.6}
+.mu-btns{display:flex;gap:24px;align-items:center}
+.mu-btn{font-size:28px;cursor:pointer;opacity:.8}
+.mu-btn:hover{opacity:1}
+.mu-play{font-size:40px;width:64px;height:64px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff}
+.mu-vis{display:flex;gap:3px;align-items:flex-end;height:40px}
+.mu-vis div{width:4px;background:var(--accent);border-radius:2px;animation:vis 1s ease-in-out infinite alternate}
+@keyframes vis{from{height:10px}to{height:40px}}
+
+/* Games */
+.gm-tabs{display:flex;gap:8px;padding:8px;border-bottom:1px solid var(--border)}
+.gm-tab{padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:background .12s}
+.gm-tab.active{background:var(--accent);color:#fff}
+
+/* Settings */
+.st-root{display:flex;height:100%}
+.st-sidebar{width:220px;padding:12px 8px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.st-sb-item{padding:8px 12px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .12s;display:flex;gap:8px;align-items:center}
+.st-sb-item:hover,.st-sb-item.active{background:rgba(255,255,255,.1)}
+.st-main{flex:1;overflow-y:auto;padding:24px}
+.st-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.st-label{font-size:14px}
+.st-color-pick{display:flex;gap:8px;flex-wrap:wrap}
+.st-color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s}
+.st-color-swatch:hover{transform:scale(1.15)}
+.st-color-swatch.active{border-color:#fff}
+.st-wp-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:400px}
+.st-wp{width:100%;height:60px;border-radius:8px;cursor:pointer;background-size:cover;border:2px solid transparent}
+.st-wp.active{border-color:var(--accent)}
+.toggle{width:40px;height:22px;background:rgba(255,255,255,.2);border-radius:11px;cursor:pointer;position:relative;transition:background .2s}
+.toggle.on{background:var(--accent)}
+.toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s}
+.toggle.on .knob{left:20px}
+
+/* Task Manager */
+.tm-root{padding:16px;height:100%;overflow-y:auto}
+.tm-table{width:100%;border-collapse:collapse}
+.tm-table th{text-align:left;font-size:12px;opacity:.6;padding:8px;border-bottom:1px solid var(--border)}
+.tm-table td{padding:8px;font-size:13px;border-bottom:1px solid var(--border)}
+.tm-kill{color:#f55;cursor:pointer;font-size:12px}
+
+/* About */
+.ab-root{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:32px;text-align:center}
+.ab-logo{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;width:80px;height:80px}
+.ab-logo div{background:var(--accent);border-radius:8px;box-shadow:0 0 20px var(--accent)}
+.ab-name{font-size:32px;font-weight:300}
+.ab-ver{font-size:14px;opacity:.7}
+.ab-info{font-size:13px;line-height:1.8;opacity:.8}
+.ab-license{margin-top:20px;font-size:12px;opacity:.5}
+.ab-rights{margin-top:16px;font-size:16px;font-weight:600}
+
+/* Paint */
+.pt-root{display:flex;flex-direction:column;height:100%}
+.pt-toolbar{display:flex;gap:8px;padding:8px;border-bottom:1px solid var(--border);align-items:center;flex-shrink:0}
+.pt-canvas-wrap{flex:1;overflow:hidden;position:relative;background:#fff}
+.pt-canvas{position:absolute;inset:0;cursor:crosshair}
+
+/* Weather */
+.wt-root{padding:24px;height:100%;overflow-y:auto}
+.wt-now{display:flex;align-items:center;gap:20px;margin-bottom:24px}
+.wt-now .temp{font-size:56px;font-weight:200}
+.wt-now .icon{font-size:48px}
+.wt-forecast{display:flex;gap:12px;overflow-x:auto}
+.wt-day{background:rgba(255,255,255,.06);border-radius:12px;padding:16px;text-align:center;min-width:100px}
+.wt-day .icon{font-size:28px;margin:8px 0}
+
+/* Notes */
+.nt-root{display:flex;height:100%}
+.nt-sidebar{width:200px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.nt-new{margin:8px;width:calc(100% - 16px)}
+.nt-list-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background .12s}
+.nt-list-item:hover,.nt-list-item.active{background:rgba(255,255,255,.08)}
+.nt-main{flex:1;overflow-y:auto;padding:16px}
+.nt-title{font-size:18px;font-weight:600;border:none;outline:none;background:none;color:var(--text);width:100%;margin-bottom:12px}
+.nt-body{width:100%;min-height:300px;border:none;outline:none;resize:none;background:none;color:var(--text);font-size:14px;line-height:1.6;font-family:inherit}
+
+/* Photos */
+.ph-root{padding:16px;overflow-y:auto;height:100%}
+.ph-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+
+/* Dictaphone */
+.dc-root{display:flex;flex-direction:column;height:100%;padding:24px;gap:16px;align-items:center}
+.dc-btn{width:80px;height:80px;border-radius:50%;background:#e81123;color:#fff;font-size:32px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.dc-btn.recording{animation:dcPulse 1s ease-in-out infinite}
+@keyframes dcPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(232,17,35,.4)}50%{transform:scale(1.05);box-shadow:0 0 0 12px rgba(232,17,35,0)}}
+.dc-timer{font-size:24px;font-weight:300}
+.dc-list{width:100%;flex:1;overflow-y:auto}
+.dc-item{background:rgba(255,255,255,.06);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:12px;align-items:center}
+.dc-item audio{height:32px}
+.dc-item .size{font-size:11px;opacity:.5}
+.dc-download{cursor:pointer;font-size:18px;opacity:.7}
+.dc-download:hover{opacity:1}
+
+/* Camera */
+.cam-root{display:flex;flex-direction:column;height:100%}
+.cam-toolbar{display:flex;gap:8px;padding:8px;border-bottom:1px solid var(--border);align-items:center;flex-shrink:0}
+.cam-vid{flex:1;position:relative;overflow:hidden;background:#000}
+.cam-vid video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.cam-vid.mirror-none video{transform:none}
+.cam-corner{position:absolute;width:40px;height:40px;border-color:var(--accent);border-style:solid;border-width:0}
+.cam-tl{top:10px;left:10px;border-top-width:3px;border-left-width:3px;border-top-left-radius:8px}
+.cam-tr{top:10px;right:10px;border-top-width:3px;border-right-width:3px;border-top-right-radius:8px}
+.cam-bl{bottom:10px;left:10px;border-bottom-width:3px;border-left-width:3px;border-bottom-left-radius:8px}
+.cam-br{bottom:10px;right:10px;border-bottom-width:3px;border-right-width:3px;border-bottom-right-radius:8px}
+.cam-rec{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(232,17,35,.9);color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;display:none}
+.cam-rec.show{display:flex;align-items:center;gap:6px}
+.cam-gallery{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto}
+.cam-thumb{width:50px;height:50px;border-radius:6px;border:1px solid var(--border);object-fit:cover;cursor:pointer}
+.cam-err{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:20px}
+.cam-flash{position:absolute;inset:0;background:#fff;pointer-events:none;opacity:0;z-index:5}
+.cam-flash.flash{animation:flashAnim .3s}
+@keyframes flashAnim{0%{opacity:.8}100%{opacity:0}}
+
+/* Misc */
+.hidden{display:none!important}
+.glass{background:var(--bg-panel);backdrop-filter:blur(20px)}
+.muted{opacity:.6}
+.center{text-align:center}
+.flex{display:flex}
+.flex-col{display:flex;flex-direction:column}
+.gap-8{gap:8px}
+.gap-12{gap:12px}
+.gap-16{gap:16px}
+.mt-8{margin-top:8px}
+.mt-16{margin-top:16px}
+.w-full{width:100%}
+</style>
+
+</head>
+<body>
+<div id="boot">
+  <div class="boot-logo"><div></div><div></div><div></div><div></div></div>
+  <div class="boot-spinner"></div>
+  <div class="boot-text">Запуск NovaOS...</div>
+</div>
+
+<div id="lock">
+  <div class="lock-clock" id="lock-time">21:00</div>
+  <div class="lock-date" id="lock-date">Загрузка...</div>
+  <div class="lock-weather">
+    <div class="temp">+15°</div>
+    <div class="city">Москва</div>
+  </div>
+  <div class="lock-hint">Нажмите, чтобы войти</div>
+</div>
+
+<div id="desktop">
+  <div id="desktop-icons"></div>
+  <div id="windows-container"></div>
+  <div id="snap-preview"></div>
+
+  <div id="taskbar">
+    <div class="tb-start" id="btn-start"><div></div><div></div><div></div><div></div></div>
+    <div class="tb-search">
+      <span class="ico">🔍</span>
+      <input type="text" placeholder="Поиск" id="tb-search-input">
+    </div>
+    <div class="tb-apps" id="tb-pinned"></div>
+    <div class="tb-apps" id="tb-running"></div>
+    <div class="tb-tray">
+      <div class="tray-ico" id="tray-wifi" title="Wi-Fi">📶</div>
+      <div class="tray-ico" id="tray-sound" title="Звук">🔊</div>
+      <div class="tray-ico" id="tray-battery" title="Батарея">🔋</div>
+      <div class="tb-clock" id="tray-clock">
+        <span id="tray-time">21:00</span>
+        <span id="tray-date" style="opacity:.7;font-size:11px">28.09.2026</span>
+      </div>
+      <div class="tray-ico" id="tray-bell" title="Уведомления">🔔<span class="tb-bell-badge hidden" id="bell-badge">0</span></div>
+    </div>
+  </div>
+
+  <div id="start-menu">
+    <div class="sm-search">
+      <span class="ico">🔍</span>
+      <input type="text" placeholder="Введите название приложения" id="sm-search-input">
+    </div>
+    <div class="sm-section-title">Приложения</div>
+    <div class="sm-grid" id="sm-grid"></div>
+    <div class="sm-power">
+      <button class="sm-power-btn" id="power-sleep" title="Спящий режим">😴</button>
+      <button class="sm-power-btn" id="power-shutdown" title="Выключить">⏻</button>
+      <button class="sm-power-btn" id="power-restart" title="Перезагрузка">🔄</button>
+    </div>
+  </div>
+
+  <div class="flyout" id="flyout-cal">
+    <div class="flyout-big-time" id="flyout-time">21:00:00</div>
+    <div class="flyout-date" id="flyout-date">Дата</div>
+    <div class="cal-nav">
+      <button id="cal-prev">◀</button>
+      <span id="cal-month">Сентябрь 2026</span>
+      <button id="cal-next">▶</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <div class="flyout" id="flyout-vol">
+    <div class="vol-top">
+      <span class="vol-emoji" id="vol-emoji">🔊</span>
+      <span id="vol-pct">50%</span>
+    </div>
+    <div class="vol-slider" id="vol-slider">
+      <div class="vol-fill" id="vol-fill"></div>
+      <div class="vol-handle" id="vol-handle"></div>
+    </div>
+  </div>
+
+  <div class="flyout" id="flyout-notif">
+    <div class="notif-header">
+      <h3>Уведомления</h3>
+      <button class="notif-clear" id="notif-clear-btn">Очистить</button>
+    </div>
+    <div class="notif-tiles" id="notif-tiles">
+      <div class="notif-tile" data-tile="wifi">🌐 <span class="lbl">Wi-Fi</span></div>
+      <div class="notif-tile" data-tile="bt">🔵 <span class="lbl">Bluetooth</span></div>
+      <div class="notif-tile" data-tile="airplane">✈️ <span class="lbl">Авиа</span></div>
+      <div class="notif-tile" data-tile="night">🌙 <span class="lbl">Ночь</span></div>
+      <div class="notif-tile" data-tile="focus">🎯 <span class="lbl">Фокус</span></div>
+      <div class="notif-tile" data-tile="rec">⏺️ <span class="lbl">Запись</span></div>
+    </div>
+    <div class="notif-sliders">
+      <div class="notif-slider-row">
+        <span class="emoji">🔊</span>
+        <div class="vol-slider" id="notif-vol-slider" style="flex:1">
+          <div class="vol-fill" id="notif-vol-fill" style="width:50%"></div>
+          <div class="vol-handle" id="notif-vol-handle" style="left:50%"></div>
+        </div>
+      </div>
+      <div class="notif-slider-row">
+        <span class="emoji">☀️</span>
+        <div class="vol-slider" id="notif-bright-slider" style="flex:1">
+          <div class="vol-fill" id="notif-bright-fill" style="width:80%"></div>
+          <div class="vol-handle" id="notif-bright-handle" style="left:80%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="notif-list" id="notif-list">
+      <div class="notif-empty">Нет новых уведомлений</div>
+    </div>
+  </div>
+
+  <div id="ctx-menu"></div>
+  <div id="notif-container"></div>
+  <div id="power-screen">
+    <div class="boot-spinner"></div>
+    <div class="boot-text" id="power-text">Завершение работы...</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════
+   NovaOS v1.0 — Core JavaScript
+   ═══════════════════════════════════════════════════════ */
+const OS = {
+  name: 'NovaOS', version: '1.0', build: '10.0.99999', year: '2026', author: 'NovaDev',
+  windows: {}, zIndex: 100, activeWindow: null,
+  settings: {},
+  notifications: [],
+  notifTiles: {wifi:true, bt:false, airplane:false, night:false, focus:false, rec:false},
+  volume: 50, brightness: 80,
+  calMonth: new Date().getMonth(), calYear: new Date().getFullYear(),
+};
+
+/* ── Settings ── */
+function loadSettings(){
+  const d = localStorage.getItem('NovaOS_settings');
+  if(d) OS.settings = JSON.parse(d);
+  else OS.settings = {theme:'dark',accent:'#0a84ff',wallpaper:0,timeformat:24,seconds:true,iconsize:'normal',animations:true};
+}
+function saveSettings(){localStorage.setItem('NovaOS_settings',JSON.stringify(OS.settings));}
+function applySettings(){
+  document.documentElement.dataset.theme = OS.settings.theme;
+  document.documentElement.style.setProperty('--accent',OS.settings.accent);
+  const wps = [
+    'https://images.unsplash.com/photo-1451177559227-676f22e9883b?w=1920&q=80',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3da?w=1920&q=80',
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80',
+    'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?w=1920&q=80',
+    'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1920&q=80',
+    'https://images.unsplash.com/photo-1455218876972-8b19e6c6c7c4?w=1920&q=80',
+    'https://images.unsplash.com/photo-1472214103451-9374bd1c7986?w=1920&q=80',
+    'https://images.unsplash.com/photo-1447752875215-b2761d3d530c?w=1920&q=80'
+  ];
+  const wp = wps[OS.settings.wallpaper] || wps[0];
+  document.documentElement.style.setProperty('--wallpaper',`url('${wp}')`);
+  document.getElementById('desktop').style.background = `url('${wp}')`;
+  const sz = OS.settings.iconsize==='large'?90:OS.settings.iconsize==='small'?56:72;
+  document.documentElement.style.setProperty('--icon-size',sz+'px');
+  saveSettings();
+}
+
+/* ── Time / Date ── */
+function updateTime(){
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const timeStr = OS.settings.timeformat===12 ? to12h(now) : `${h}:${m}`;
+  const timeFull = OS.settings.seconds ? `${h}:${m}:${s}` : `${h}:${m}`;
+  document.getElementById('lock-time').textContent = timeStr;
+  document.getElementById('tray-time').textContent = timeStr;
+  document.getElementById('flyout-time').textContent = timeFull;
+  const days = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const dateStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+  document.getElementById('lock-date').textContent = dateStr;
+  document.getElementById('flyout-date').textContent = dateStr;
+  document.getElementById('tray-date').textContent = `${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
+}
+function to12h(d){
+  let h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');
+  const ap=h>=12?'PM':'AM';h=h%12||12;return `${h}:${m} ${ap}`;
+}
+
+/* ── Boot Sequence ── */
+function bootSequence(){
+  loadSettings();
+  applySettings();
+  updateTime();
+  setInterval(updateTime,1000);
+  renderDesktopIcons();
+  renderStartMenu();
+  renderTaskbarPinned();
+  setTimeout(()=>{
+    const boot=document.getElementById('boot');
+    boot.style.opacity='0';
+    setTimeout(()=>{boot.style.display='none';},400);
+  },2500);
+  document.getElementById('lock').addEventListener('click',()=>{
+    const lock=document.getElementById('lock');
+    lock.style.opacity='0';
+    setTimeout(()=>{
+      lock.style.display='none';
+      document.getElementById('desktop').style.display='block';
+      showNotification('NovaOS','Добро пожаловать в систему!','👋');
+    },400);
+  });
+}
+
+/* ── Apps Registry ── */
+const APPS = [
+  {id:'files',name:'Этот компьютер',icon:'💻',content:appFiles},
+  {id:'bank',name:'NovaBank',icon:'🏦',content:appBank},
+  {id:'store',name:'Магазин',icon:'🛒',content:appStore},
+  {id:'browser',name:'Браузер',icon:'🌐',content:appBrowser},
+  {id:'camera',name:'Камера',icon:'📷',content:appCamera},
+  {id:'clock',name:'Часы',icon:'🕐',content:appClock},
+  {id:'qr',name:'QR-код',icon:'📱',content:appQR},
+  {id:'dictaphone',name:'Диктофон',icon:'🎤',content:appDictaphone},
+  {id:'notepad',name:'Блокнот',icon:'📝',content:appNotepad},
+  {id:'calculator',name:'Калькулятор',icon:'🧮',content:appCalculator},
+  {id:'paint',name:'Paint',icon:'🎨',content:appPaint},
+  {id:'music',name:'Музыка',icon:'🎵',content:appMusic},
+  {id:'photos',name:'Фотографии',icon:'🖼️',content:appPhotos},
+  {id:'terminal',name:'Терминал',icon:'⌨️',content:appTerminal},
+  {id:'settings',name:'Параметры',icon:'⚙️',content:appSettings},
+  {id:'weather',name:'Погода',icon:'☁️',content:appWeather},
+  {id:'about',name:'О системе',icon:'ℹ️',content:appAbout},
+  {id:'notes',name:'Заметки',icon:'📒',content:appNotes},
+  {id:'taskmgr',name:'Диспетчер задач',icon:'📊',content:appTaskMgr},
+  {id:'games',name:'Игры',icon:'🎮',content:appGames},
+];
+const DESKTOP_ORDER = ['files','bank','store','browser','camera','clock','qr','dictaphone','notepad','calculator','paint','music','photos','terminal','settings','weather','about'];
+const PINNED_APPS = ['files','browser','bank','store','camera','settings'];
+
+/* ── Desktop Icons ── */
+function renderDesktopIcons(){
+  const c = document.getElementById('desktop-icons');
+  c.innerHTML='';
+  DESKTOP_ORDER.forEach(id=>{
+    const app = APPS.find(a=>a.id===id);
+    if(!app) return;
+    const d = document.createElement('div');
+    d.className='desk-icon';d.dataset.app=id;
+    d.innerHTML=`<span class="emoji">${app.icon}</span><span class="label">${app.name}</span>`;
+    d.addEventListener('click',e=>{
+      e.stopPropagation();
+      document.querySelectorAll('.desk-icon').forEach(x=>x.classList.remove('selected'));
+      d.classList.add('selected');
+    });
+    d.addEventListener('dblclick',()=>openApp(id));
+    d.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();
+      document.querySelectorAll('.desk-icon').forEach(x=>x.classList.remove('selected'));
+      d.classList.add('selected');
+      showContextMenu(e.clientX,e.clientY,[
+        {label:'Открыть',action:()=>openApp(id)},
+        {label:'Свойства',action:()=>{openApp('about');}}
+      ]);
+    });
+    c.appendChild(d);
+  });
+  document.getElementById('desktop').addEventListener('click',()=>{
+    document.querySelectorAll('.desk-icon').forEach(x=>x.classList.remove('selected'));
+    hideContextMenu();
+    closeStartMenu();
+    closeFlyouts();
+  });
+  document.getElementById('desktop').addEventListener('contextmenu',e=>{
+    if(e.target.id==='desktop'||e.target.id==='desktop-icons'||e.target.id==='windows-container'){
+      e.preventDefault();
+      showContextMenu(e.clientX,e.clientY,[
+        {label:'Обновить',action:()=>renderDesktopIcons()},
+        {label:'Параметры',action:()=>openApp('settings')},
+        {sep:true},
+        {label:'Сменить обои',action:()=>openApp('settings')}
+      ]);
+    }
+  });
+}
+
+/* ── Start Menu ── */
+function renderStartMenu(){
+  const g = document.getElementById('sm-grid');
+  g.innerHTML='';
+  APPS.forEach(a=>{
+    const d=document.createElement('div');d.className='sm-item';d.dataset.app=a.id;
+    d.innerHTML=`<span class="emoji">${a.icon}</span><span class="name">${a.name}</span>`;
+    d.addEventListener('click',()=>{openApp(a.id);closeStartMenu();});
+    g.appendChild(d);
+  });
+  const si=document.getElementById('sm-search-input');
+  si.addEventListener('input',()=>{
+    const q=si.value.toLowerCase();
+    g.querySelectorAll('.sm-item').forEach(it=>{
+      const n=it.querySelector('.name').textContent.toLowerCase();
+      it.style.display=n.includes(q)?'':'none';
+    });
+  });
+}
+function toggleStartMenu(){const m=document.getElementById('start-menu');if(m.classList.contains('show'))closeStartMenu();else openStartMenu();}
+function openStartMenu(){document.getElementById('start-menu').classList.add('show');closeFlyouts();}
+function closeStartMenu(){document.getElementById('start-menu').classList.remove('show');}
+document.getElementById('btn-start').addEventListener('click',e=>{e.stopPropagation();toggleStartMenu();});
+
+/* ── Taskbar ── */
+function renderTaskbarPinned(){
+  const c=document.getElementById('tb-pinned');c.innerHTML='';
+  PINNED_APPS.forEach(id=>{
+    const app=APPS.find(a=>a.id===id);
+    const d=document.createElement('div');d.className='tb-app';d.dataset.app=id;d.title=app.name;
+    d.innerHTML=app.icon;
+    d.addEventListener('click',e=>{
+      e.stopPropagation();
+      const w=findWindowByApp(id);
+      if(w){if(w===OS.activeWindow)minimizeWindow(w.id);else{unminimizeWindow(w.id);focusWindow(w.id);}}
+      else openApp(id);
+    });
+    d.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();
+      const w=findWindowByApp(id);
+      const items=[];
+      if(w){items.push({label:'Свернуть',action:()=>minimizeWindow(w.id)});
+        items.push({label:'Развернуть',action:()=>{unminimizeWindow(w.id);focusWindow(w.id);}});
+        items.push({sep:true});
+        items.push({label:'Закрыть',action:()=>closeWindow(w.id)});}
+      else items.push({label:'Открыть',action:()=>openApp(id)});
+      showContextMenu(e.clientX,e.clientY,items);
+    });
+    c.appendChild(d);
+  });
+}
+function updateTaskbarRunning(){
+  const c=document.getElementById('tb-running');c.innerHTML='';
+  Object.keys(OS.windows).forEach(wid=>{
+    const w=OS.windows[wid];
+    if(PINNED_APPS.includes(w.appId)){
+      const p=document.querySelector(`.tb-pinned .tb-app[data-app="${w.appId}"]`);
+      if(p){
+        if(w.minimized)p.classList.add('minimized'),p.classList.remove('active');
+        else if(OS.activeWindow===w.id)p.classList.add('active'),p.classList.remove('minimized');
+        else p.classList.remove('active','minimized');
+        return;
+      }
+    }
+    const app=APPS.find(a=>a.id===w.appId);
+    const d=document.createElement('div');d.className='tb-app';d.dataset.app=w.appId;d.title=app.name;
+    d.innerHTML=app.icon;
+    if(w.minimized)d.classList.add('minimized');
+    else if(OS.activeWindow===w.id)d.classList.add('active');
+    d.addEventListener('click',e=>{e.stopPropagation();
+      if(w.minimized){unminimizeWindow(wid);focusWindow(wid);}
+      else if(OS.activeWindow===wid)minimizeWindow(wid);
+      else focusWindow(wid);
+    });
+    d.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();
+      showContextMenu(e.clientX,e.clientY,[
+        {label:'Свернуть',action:()=>minimizeWindow(wid)},
+        {label:'Развернуть',action:()=>{unminimizeWindow(wid);focusWindow(wid);}},
+        {sep:true},
+        {label:'Закрыть',action:()=>closeWindow(wid)}
+      ]);
+    });
+    c.appendChild(d);
+  });
+}
+
+/* ── Flyouts ── */
+function closeFlyouts(){document.querySelectorAll('.flyout').forEach(f=>f.classList.remove('show'));hideContextMenu();}
+document.getElementById('tray-clock').addEventListener('click',e=>{e.stopPropagation();toggleFlyout('flyout-cal',e);});
+document.getElementById('tray-sound').addEventListener('click',e=>{e.stopPropagation();toggleFlyout('flyout-vol',e);});
+document.getElementById('tray-bell').addEventListener('click',e=>{e.stopPropagation();toggleFlyout('flyout-notif',e);renderNotifList();});
+function toggleFlyout(id,e){
+  const el=document.getElementById(id);
+  const showing=el.classList.contains('show');
+  closeFlyouts();
+  closeStartMenu();
+  if(!showing)el.classList.add('show');
+}
+
+/* Calendar */
+function renderCalendar(){
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  const months=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  document.getElementById('cal-month').textContent=`${months[OS.calMonth]} ${OS.calYear}`;
+  ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(d=>{const e=document.createElement('div');e.className='cal-dow';e.textContent=d;grid.appendChild(e);});
+  const first=new Date(OS.calYear,OS.calMonth,1);
+  let startDow=(first.getDay()+6)%7;
+  const daysInM=new Date(OS.calYear,OS.calMonth+1,0).getDate();
+  const prevDays=new Date(OS.calYear,OS.calMonth,0).getDate();
+  const today=new Date();
+  for(let i=0;i<startDow;i++){const d=document.createElement('div');d.className='cal-day other-month';d.textContent=prevDays-startDow+i+1;grid.appendChild(d);}
+  for(let i=1;i<=daysInM;i++){
+    const d=document.createElement('div');d.className='cal-day';d.textContent=i;
+    if(today.getDate()===i&&today.getMonth()===OS.calMonth&&today.getFullYear()===OS.calYear)d.classList.add('today');
+    grid.appendChild(d);
+  }
+  const total=startDow+daysInM;
+  const remain=(7-total%7)%7;
+  for(let i=1;i<=remain;i++){const d=document.createElement('div');d.className='cal-day other-month';d.textContent=i;grid.appendChild(d);}
+}
+document.getElementById('cal-prev').addEventListener('click',e=>{e.stopPropagation();OS.calMonth--;if(OS.calMonth<0){OS.calMonth=11;OS.calYear--;}renderCalendar();});
+document.getElementById('cal-next').addEventListener('click',e=>{e.stopPropagation();OS.calMonth++;if(OS.calMonth>11){OS.calMonth=0;OS.calYear++;}renderCalendar();});
+
+/* Volume */
+function setupVolSlider(sliderEl,fillEl,handleEl,val,cb){
+  function setVal(e){
+    const r=sliderEl.getBoundingClientRect();
+    let p=(e.clientX-r.left)/r.width;p=Math.max(0,Math.min(1,p));
+    val=Math.round(p*100);
+    fillEl.style.width=val+'%';handleEl.style.left=val+'%';
+    cb(val);
+  }
+  let dragging=false;
+  sliderEl.addEventListener('mousedown',e=>{dragging=true;setVal(e);});
+  document.addEventListener('mousemove',e=>{if(dragging)setVal(e);});
+  document.addEventListener('mouseup',()=>dragging=false);
+}
+setupVolSlider(document.getElementById('vol-slider'),document.getElementById('vol-fill'),document.getElementById('vol-handle'),OS.volume,(v)=>{
+  OS.volume=v;document.getElementById('vol-pct').textContent=v+'%';
+  const em=document.getElementById('vol-emoji');
+  em.textContent=v===0?'🔇':v<34?'🔉':'🔊';
+});
+setupVolSlider(document.getElementById('notif-vol-slider'),document.getElementById('notif-vol-fill'),document.getElementById('notif-vol-handle'),OS.volume,(v)=>{
+  OS.volume=v;document.getElementById('vol-pct').textContent=v+'%';
+  const em=document.getElementById('vol-emoji');em.textContent=v===0?'🔇':v<34?'🔉':'🔊';
+});
+setupVolSlider(document.getElementById('notif-bright-slider'),document.getElementById('notif-bright-fill'),document.getElementById('notif-bright-handle'),OS.brightness,(v)=>{
+  OS.brightness=v;document.getElementById('desktop').style.filter=`brightness(${v/100*0.5+0.5})`;
+});
+
+/* Notif tiles */
+document.querySelectorAll('.notif-tile').forEach(t=>{
+  t.addEventListener('click',()=>{
+    t.classList.toggle('active');
+    OS.notifTiles[t.dataset.tile]=t.classList.contains('active');
+  });
+  if(OS.notifTiles[t.dataset.tile])t.classList.add('active');
+});
+document.getElementById('notif-clear-btn').addEventListener('click',e=>{e.stopPropagation();OS.notifications=[];updateBellBadge();renderNotifList();});
+
+/* ── Notifications ── */
+function showNotification(title,text,icon='ℹ️'){
+  icon=String(icon);if(icon.length>2)icon='ℹ️';
+  const n={title,text,icon,time:new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})};
+  OS.notifications.unshift(n);if(OS.notifications.length>20)OS.notifications.pop();
+  updateBellBadge();renderNotifList();
+  const c=document.getElementById('notif-container');
+  const t=document.createElement('div');t.className='toast';
+  t.innerHTML=`<span class="emoji">${icon}</span><div class="body"><div class="title">${title}</div><div class="text">${text}</div></div>`;
+  c.appendChild(t);
+  setTimeout(()=>{t.classList.add('hide');setTimeout(()=>t.remove(),300);},4500);
+}
+function updateBellBadge(){
+  const b=document.getElementById('bell-badge');
+  if(OS.notifications.length>0){b.textContent=OS.notifications.length;b.classList.remove('hidden');}
+  else b.classList.add('hidden');
+}
+function renderNotifList(){
+  const l=document.getElementById('notif-list');
+  if(OS.notifications.length===0){l.innerHTML='<div class="notif-empty">Нет новых уведомлений</div>';return;}
+  l.innerHTML='';
+  OS.notifications.forEach(n=>{
+    const d=document.createElement('div');d.className='notif-item';
+    d.innerHTML=`<div class="emoji">${n.icon}</div><div class="body"><div class="title">${n.title}</div><div class="text">${n.text}</div><div class="time">${n.time}</div></div>`;
+    l.appendChild(d);
+  });
+}
+
+/* ── Context Menu ── */
+function showContextMenu(x,y,items){
+  const m=document.getElementById('ctx-menu');m.innerHTML='';
+  items.forEach(it=>{
+    if(it.sep){const s=document.createElement('div');s.className='ctx-sep';m.appendChild(s);return;}
+    const d=document.createElement('div');d.className='ctx-item';d.textContent=it.label;
+    d.addEventListener('click',e=>{e.stopPropagation();hideContextMenu();it.action();});
+    m.appendChild(d);
+  });
+  m.style.left=x+'px';m.style.top=y+'px';m.classList.add('show');
+  const r=m.getBoundingClientRect();
+  if(r.right>window.innerWidth)m.style.left=(window.innerWidth-r.width-4)+'px';
+  if(r.bottom>window.innerHeight)m.style.top=(window.innerHeight-r.height-4)+'px';
+}
+function hideContextMenu(){document.getElementById('ctx-menu').classList.remove('show');}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#ctx-menu'))hideContextMenu();
+  if(!e.target.closest('#start-menu')&&!e.target.closest('#btn-start'))closeStartMenu();
+  if(!e.target.closest('.flyout')&&!e.target.closest('.tb-tray'))closeFlyouts();
+});
+
+/* ── Power ── */
+function powerSleep(){
+  const s=document.getElementById('power-screen');
+  s.querySelector('.boot-text').textContent='Спящий режим...';
+  s.classList.add('show');
+  setTimeout(()=>{s.classList.remove('show');},2000);
+}
+function powerShutdown(){
+  const s=document.getElementById('power-screen');
+  s.querySelector('.boot-text').textContent='Завершение работы...';
+  s.classList.add('show');
+  setTimeout(()=>{document.body.innerHTML='<div style="position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;color:#333;font-size:14px;font-family:sans-serif">Система выключена. Обновите страницу для запуска.</div>';},5000);
+}
+function powerRestart(){
+  const s=document.getElementById('power-screen');
+  s.querySelector('.boot-text').textContent='Перезагрузка...';
+  s.classList.add('show');
+  setTimeout(()=>location.reload(),2500);
+}
+document.getElementById('power-sleep').addEventListener('click',powerSleep);
+document.getElementById('power-shutdown').addEventListener('click',powerShutdown);
+document.getElementById('power-restart').addEventListener('click',powerRestart);
+
+/* ── Keyboard ── */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeStartMenu();closeFlyouts();hideContextMenu();}
+  if(e.key==='Meta'||(e.ctrlKey&&e.key==='Escape')){e.preventDefault();toggleStartMenu();}
+});
+
+/* ── Window Manager ── */
+function openApp(appId){
+  const app=APPS.find(a=>a.id===appId);
+  if(!app)return;
+  const existing=findWindowByApp(appId);
+  if(existing){unminimizeWindow(existing.id);focusWindow(existing.id);return;}
+  const wid='win_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+  const wc=document.getElementById('windows-container');
+  const w=document.createElement('div');w.className='window opening';w.id=wid;
+  const winW=Math.min(840,window.innerWidth-100);
+  const winH=Math.min(560,window.innerHeight-80);
+  w.style.width=winW+'px';w.style.height=winH+'px';
+  w.style.left=Math.max(20,(window.innerWidth-winW)/2+Math.random()*60-30)+'px';
+  w.style.top=Math.max(10,(window.innerHeight-winH)/2-30+Math.random()*40-20)+'px';
+  w.style.zIndex=++OS.zIndex;
+  w.innerHTML=`
+    <div class="win-titlebar" data-drag>
+      <span class="win-icon">${app.icon}</span>
+      <span class="win-title">${app.name}</span>
+      <div class="win-btns">
+        <button class="win-btn min" title="Свернуть">—</button>
+        <button class="win-btn max" title="Развернуть">▢</button>
+        <button class="win-btn close" title="Закрыть">✕</button>
+      </div>
+    </div>
+    <div class="win-body" id="${wid}_body"></div>
+    <div class="resize-handle rh-e"></div><div class="resize-handle rh-w"></div>
+    <div class="resize-handle rh-s"></div><div class="resize-handle rh-n"></div>
+    <div class="resize-handle rh-se"></div><div class="resize-handle rh-sw"></div>
+    <div class="resize-handle rh-ne"></div><div class="resize-handle rh-nw"></div>
+  `;
+  wc.appendChild(w);
+  const winObj={id:wid,appId,w,el:w,title:app.name,icon:app.icon,minimized:false,maximized:false,prevRect:null};
+  OS.windows[wid]=winObj;
+  const body=document.getElementById(wid+'_body');
+  if(app.content)app.content(body,wid);
+  w.querySelector('.win-btn.min').addEventListener('click',e=>{e.stopPropagation();minimizeWindow(wid);});
+  w.querySelector('.win-btn.max').addEventListener('click',e=>{e.stopPropagation();toggleMaximize(wid);});
+  w.querySelector('.win-btn.close').addEventListener('click',e=>{e.stopPropagation();closeWindow(wid);});
+  w.addEventListener('mousedown',()=>focusWindow(wid));
+  setupDrag(w);
+  setupResize(w);
+  setTimeout(()=>w.classList.remove('opening'),250);
+  focusWindow(wid);
+  updateTaskbarRunning();
+}
+function findWindowByApp(appId){return Object.values(OS.windows).find(w=>w.appId===appId&&w.w);}
+function focusWindow(wid){
+  const w=OS.windows[wid];if(!w)return;
+  if(w.minimized)unminimizeWindow(wid);
+  OS.activeWindow=wid;
+  w.el.style.zIndex=++OS.zIndex;
+  Object.values(OS.windows).forEach(o=>{o.el.classList.toggle('inactive',o.id!==wid);});
+  updateTaskbarRunning();
+}
+function closeWindow(wid){
+  const w=OS.windows[wid];if(!w)return;
+  w.el.classList.add('opening');
+  setTimeout(()=>{
+    w.el.remove();delete OS.windows[wid];
+    if(OS.activeWindow===wid)OS.activeWindow=null;
+    updateTaskbarRunning();
+  },220);
+}
+function minimizeWindow(wid){
+  const w=OS.windows[wid];if(!w)return;
+  w.el.classList.add('minimized');w.minimized=true;
+  if(OS.activeWindow===wid){OS.activeWindow=null;Object.values(OS.windows).forEach(o=>{if(!o.minimized){focusWindow(o.id);}});}
+  updateTaskbarRunning();
+}
+function unminimizeWindow(wid){
+  const w=OS.windows[wid];if(!w)return;
+  w.el.classList.remove('minimized');w.minimized=false;
+  updateTaskbarRunning();
+}
+function toggleMaximize(wid){
+  const w=OS.windows[wid];if(!w)return;
+  if(w.maximized){
+    const r=w.prevRect;
+    w.el.style.left=r.left+'px';w.el.style.top=r.top+'px';w.el.style.width=r.width+'px';w.el.style.height=r.height+'px';
+    w.el.classList.remove('maximized');w.maximized=false;
+  } else {
+    w.prevRect={left:parseInt(w.el.style.left),top:parseInt(w.el.style.top),width:parseInt(w.el.style.width),height:parseInt(w.el.style.height)};
+    w.el.style.left='0';w.el.style.top='0';w.el.style.width='100%';w.el.style.height='calc(100% - var(--tray-h))';
+    w.el.classList.add('maximized');w.maximized=true;
+  }
+}
+function setupDrag(w){
+  const tb=w.querySelector('.win-titlebar');
+  let dx=0,dy=0,dragging=false,snapping=false;
+  tb.addEventListener('mousedown',e=>{
+    if(e.target.classList.contains('win-btn'))return;
+    const win=OS.windows[w.id];if(win.maximized)return;
+    dragging=true;
+    dx=e.clientX-parseInt(w.style.left);
+    dy=e.clientY-parseInt(w.style.top);
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    let nx=e.clientX-dx,ny=e.clientY-dy;
+    w.style.left=nx+'px';w.style.top=ny+'px';
+    const sp=document.getElementById('snap-preview');
+    if(e.clientY<=4){sp.style.display='block';sp.style.left='0';sp.style.top='0';sp.style.width='100%';sp.style.height='calc(100% - var(--tray-h))';snapping='max';}
+    else if(e.clientX<=4){sp.style.display='block';sp.style.left='0';sp.style.top='0';sp.style.width='50%';sp.style.height='calc(100% - var(--tray-h))';snapping='left';}
+    else if(e.clientX>=window.innerWidth-4){sp.style.display='block';sp.style.left='50%';sp.style.top='0';sp.style.width='50%';sp.style.height='calc(100% - var(--tray-h))';snapping='right';}
+    else{sp.style.display='none';snapping=false;}
+  });
+  document.addEventListener('mouseup',e=>{
+    if(!dragging)return;
+    dragging=false;
+    const sp=document.getElementById('snap-preview');
+    sp.style.display='none';
+    if(snapping==='max')toggleMaximize(w.id);
+    else if(snapping==='left'){
+      w.style.left='0';w.style.top='0';w.style.width='50%';w.style.height='calc(100% - var(--tray-h))';
+    } else if(snapping==='right'){
+      w.style.left='50%';w.style.top='0';w.style.width='50%';w.style.height='calc(100% - var(--tray-h))';
+    }
+    snapping=false;
+  });
+}
+function setupResize(w){
+  w.querySelectorAll('.resize-handle').forEach(h=>{
+    h.addEventListener('mousedown',e=>{
+      e.preventDefault();e.stopPropagation();
+      const win=OS.windows[w.id];if(win.maximized)return;
+      const dir=h.className.replace('resize-handle rh-','');
+      const sx=e.clientX,sy=e.clientY;
+      const sw=parseInt(w.style.width),sh=parseInt(w.style.height);
+      const sl=parseInt(w.style.left),st=parseInt(w.style.top);
+      const r=h=>{
+        let nw=sw,nh=sh,nl=sl,nt=st;
+        if(dir.includes('e'))nw=Math.max(300,sw+(r.clientX-sx));
+        if(dir.includes('s'))nh=Math.max(200,sh+(r.clientY-sy));
+        if(dir.includes('w')){nw=Math.max(300,sw-(r.clientX-sx));nl=sl+(sw-nw);}
+        if(dir.includes('n')){nh=Math.max(200,sh-(r.clientY-sy));nt=st+(sh-nh);}
+        w.style.width=nw+'px';w.style.height=nh+'px';w.style.left=nl+'px';w.style.top=nt+'px';
+      };
+      const u=()=>document.removeEventListener('mousemove',r);
+      document.addEventListener('mousemove',r);
+      document.addEventListener('mouseup',u,{once:true});
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   APPLICATIONS
+   ═══════════════════════════════════════════════════════ */
+
+/* File Explorer */
+function appFiles(body,wid){
+  const folders={
+    'this-pc':{name:'Этот компьютер',parent:null,items:[
+      {n:'Документы',t:'folder',id:'docs'},{n:'Загрузки',t:'folder',id:'dl'},
+      {n:'Изображения',t:'folder',id:'img'},{n:'Музыка',t:'folder',id:'mus'},
+      {n:'Видео',t:'folder',id:'vid'},{n:'Диск C:',t:'folder',id:'c'},{n:'Диск D:',t:'folder',id:'d'}
+    ]},
+    'docs':{name:'Документы',parent:'this-pc',items:[
+      {n:'Резюме.docx',t:'doc'},{n:'Отчёт_2026.xlsx',t:'sheet'},{n:'Список.txt',t:'txt'},
+      {n:'Презентация.pptx',t:'ppt'},{n:'Проект.zip',t:'zip'},{n:'Заметки.txt',t:'txt'}
+    ]},
+    'dl':{name:'Загрузки',parent:'this-pc',items:[
+      {n:'setup.exe',t:'exe'},{n:'photo.jpg',t:'img'},{n:'video.mp4',t:'video'},
+      {n:'archive.zip',t:'zip'},{n:'music.mp3',t:'audio'}
+    ]},
+    'img':{name:'Изображения',parent:'this-pc',items:[
+      {n:'Закат.jpg',t:'img'},{n:'Горы.jpg',t:'img'},{n:'Море.jpg',t:'img'},{n:'Город.jpg',t:'img'}
+    ]},
+    'mus':{name:'Музыка',parent:'this-pc',items:[{n:'Трек1.mp3',t:'audio'},{n:'Трек2.mp3',t:'audio'}]},
+    'vid':{name:'Видео',parent:'this-pc',items:[{n:'Клип.mp4',t:'video'},{n:'Подкаст.mp4',t:'video'}]},
+    'c':{name:'Диск C:',parent:'this-pc',items:[{n:'Windows',t:'folder',id:'win'},{n:'Program Files',t:'folder',id:'pf'},{n:'Пользователи',t:'folder',id:'usr'}]},
+    'd':{name:'Диск D:',parent:'this-pc',items:[{n:'Игры',t:'folder',id:'games'},{n:'Фильмы',t:'folder',id:'films'}]},
+    'win':{name:'Windows',parent:'c',items:[{n:'System32',t:'folder'},{n:'Fonts',t:'folder'},{n:'explorer.exe',t:'exe'}]},
+    'pf':{name:'Program Files',parent:'c',items:[{n:'NovaOS',t:'folder'},{n:'Common Files',t:'folder'}]},
+    'usr':{name:'Пользователи',parent:'c',items:[{n:'User',t:'folder'},{n:'Public',t:'folder'}]},
+    'games':{name:'Игры',parent:'d',items:[{n:'snake.exe',t:'exe'},{n:'2048.exe',t:'exe'}]},
+    'films':{name:'Фильмы',parent:'d',items:[{n:'movie1.mp4',t:'video'},{n:'movie2.mp4',t:'video'}]},
+  };
+  const icons={folder:'📁',doc:'📄',sheet:'📊',txt:'📝',ppt:'📑',zip:'📦',exe:'⚙️',img:'🖼️',video:'🎬',audio:'🎵'};
+  let current='this-pc';
+  body.innerHTML=`<div class="fe-root"><div class="fe-sidebar" id="${wid}_sb"></div><div class="fe-main"><div class="fe-crumb" id="${wid}_crumb"></div><div class="fe-grid" id="${wid}_grid"></div></div></div>`;
+  const sb=body.querySelector(`#${wid}_sb`);
+  ['this-pc','docs','dl','img','mus','vid','c','d'].forEach(id=>{
+    const f=folders[id];
+    const d=document.createElement('div');d.className='fe-sidebar-item';d.dataset.id=id;
+    d.innerHTML=`${icons.folder} ${f.name}`;
+    d.addEventListener('click',()=>{current=id;renderFE();});
+    sb.appendChild(d);
+  });
+  function renderFE(){
+    const f=folders[current]||folders['this-pc'];
+    const crumb=body.querySelector(`#${wid}_crumb`);
+    let path=[];let cur=current;
+    while(cur){const fl=folders[cur]||{name:'?'};path.unshift(fl.name);cur=fl.parent;}
+    crumb.innerHTML=path.join(' > ');
+    sb.querySelectorAll('.fe-sidebar-item').forEach(x=>x.classList.toggle('active',x.dataset.id===current));
+    const g=body.querySelector(`#${wid}_grid`);g.innerHTML='';
+    (f.items||[]).forEach(it=>{
+      const d=document.createElement('div');d.className='fe-file';
+      d.innerHTML=`<span class="emoji">${icons[it.t]||'📄'}</span><span class="name">${it.n}</span>`;
+      d.addEventListener('dblclick',()=>{if(it.t==='folder'&&it.id&&folders[it.id]){current=it.id;renderFE();}});
+      d.addEventListener('click',()=>{});
+      g.appendChild(d);
+    });
+    if((f.items||[]).length===0)g.innerHTML='<div class="muted" style="grid-column:1/-1;text-align:center;padding:40px">Папка пуста</div>';
+  }
+  renderFE();
+}
+
+/* Notepad */
+function appNotepad(body,wid){
+  body.innerHTML=`<div class="np-root">
+    <div class="np-menu">
+      <div class="np-menu-item" data-act="new">Файл</div>
+      <div class="np-menu-item" data-act="undo">Правка</div>
+      <div class="np-menu-item" data-act="wrap">Формат</div>
+      <div class="np-menu-item" data-act="zoom">Вид</div>
+    </div>
+    <textarea class="np-textarea" id="${wid}_ta" placeholder="Введите текст..."></textarea>
+  </div>`;
+  const ta=body.querySelector(`#${wid}_ta`);
+  const saved=localStorage.getItem('NovaOS_notepad');
+  if(saved)ta.value=saved;
+  ta.addEventListener('input',()=>localStorage.setItem('NovaOS_notepad',ta.value));
+  body.querySelector('[data-act="new"]').addEventListener('click',()=>{if(confirm('Очистить текст?')){ta.value='';localStorage.setItem('NovaOS_notepad','');}});
+  body.querySelector('[data-act="wrap"]').addEventListener('click',()=>{ta.style.whiteSpace=ta.style.whiteSpace==='pre'?'pre-wrap':'pre';});
+}
+
+/* Calculator */
+function appCalculator(body,wid){
+  body.innerHTML=`<div class="calc-root">
+    <div class="calc-display"><div class="calc-prev" id="${wid}_prev"></div><div class="calc-cur" id="${wid}_cur">0</div></div>
+    <div class="calc-grid" id="${wid}_grid"></div>
+  </div>`;
+  let cur='0',prev='',op=null,reset=false;
+  const curEl=body.querySelector(`#${wid}_cur`),prevEl=body.querySelector(`#${wid}_prev`);
+  const keys=['C','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.','←','='];
+  const grid=body.querySelector(`#${wid}_grid`);
+  keys.forEach(k=>{
+    const b=document.createElement('button');b.className='calc-btn';b.textContent=k;
+    if('÷×−+'.includes(k))b.classList.add('op');
+    if(k==='=')b.classList.add('eq');
+    b.addEventListener('click',()=>calc(k));
+    grid.appendChild(b);
+  });
+  function update(){curEl.textContent=cur;prevEl.textContent=prev+(op?' '+op:'');}
+  function calc(k){
+    if(k==='C'){cur='0';prev='';op=null;reset=false;update();return;}
+    if(k==='←'){cur=cur.length>1?cur.slice(0,-1):'0';update();return;}
+    if(k==='±'){cur=String(-parseFloat(cur));update();return;}
+    if(k==='%'){cur=String(parseFloat(cur)/100);update();return;}
+    if('÷×−+'.includes(k)){
+      if(op&&!reset){const r=compute();cur=String(r);prev=cur;}
+      else prev=cur;
+      op=k;reset=true;update();return;
+    }
+    if(k==='='){
+      if(op){const r=compute();prev=cur+' '+op+' '+cur;cur=String(r);op=null;reset=true;update();prevEl.textContent=prev+' =';prev='';return;}
+      return;
+    }
+    if(k==='.'){if(!cur.includes('.'))cur+='.';update();return;}
+    if(reset){cur=k;reset=false;}else{cur=cur==='0'?k:cur+k;}
+    update();
+  }
+  function compute(){
+    const a=parseFloat(prev),b=parseFloat(cur);
+    switch(op){case'+':return a+b;case'−':return a-b;case'×':return a*b;case'÷':return b===0?'Error':a/b;}return cur;
+  }
+}
+
+/* Terminal */
+function appTerminal(body,wid){
+  body.innerHTML=`<div class="term-root" id="${wid}_term"><div class="term-output" id="${wid}_out">NovaOS Terminal [Версия 1.0.99999]\n(c) 2026 NovaDev. Все права защищены.\n\nВведите "help" для списка команд.\n\n</div></div>`;
+  const out=body.querySelector(`#${wid}_out`);
+  const term=body.querySelector(`#${wid}_term`);
+  let history=[],hi=0;
+  function addInputLine(){
+    const line=document.createElement('div');line.className='term-input-line';
+    line.innerHTML='<span class="term-prompt">C:\\Users\\User></span><input class="term-input" autofocus>';
+    out.appendChild(line);
+    const inp=line.querySelector('input');
+    inp.focus();term.scrollTop=term.scrollHeight;
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){
+        const cmd=inp.value;inp.remove();
+        const cmdSpan=document.createElement('span');cmdSpan.className='term-cmd';cmdSpan.textContent=' '+cmd;
+        line.appendChild(cmdSpan);
+        line.appendChild(document.createElement('br'));
+        history.push(cmd);hi=history.length;
+        exec(cmd);
+        addInputLine();
+      } else if(e.key==='ArrowUp'&&hi>0){hi--;inp.value=history[hi]||'';e.preventDefault();}
+      else if(e.key==='ArrowDown'){hi++;inp.value=history[hi]||'';if(hi>=history.length)inp.value='';e.preventDefault();}
+    });
+  }
+  function print(html){const d=document.createElement('div');d.innerHTML=html;out.appendChild(d);term.scrollTop=term.scrollHeight;}
+  addInputLine();
+  function exec(cmd){
+    const args=cmd.trim().split(/\s+/);const c=args[0].toLowerCase();
+    const cmds={
+      'help':()=>print('<span class="term-info">Доступные команды: help ver dir cls date time echo whoami hostname ipconfig ping tasklist kill tree банк настройки камера часы qr exit shutdown restart</span>'),
+      'ver':()=>print('NovaOS [Версия 1.0.99999]'),
+      'dir':()=>print('Том в устройстве C не имеет метки.\nСодержимое папки C:\\Users\\User\n\n< 26.09.2026  14:32 >    &lt;DIR&gt;          Documents\n< 26.09.2026  09:15 >            4,096 index.html\n< 27.09.2026  11:00 >    &lt;DIR&gt;          Downloads'),
+      'cls':()=>{out.innerHTML='';},
+      'date':()=>print('Текущая дата: '+new Date().toLocaleDateString('ru-RU')),
+      'time':()=>print('Текущее время: '+new Date().toLocaleTimeString('ru-RU')),
+      'echo':()=>print(args.slice(1).join(' ')||''),
+      'whoami':()=>print('novaos\\user'),
+      'hostname':()=>print('NOVAOS-PC'),
+      'ipconfig':()=>print('Настройка IP для Windows\n\nEthernet adapter Ethernet:\nIPv4-адрес. . . . . . . . . . . . : 192.168.1.42\nМаска подсети . . . . . . . . . . : 255.255.255.0\nОсновной шлюз. . . . . . . . . . . : 192.168.1.1'),
+      'ping':()=>{const host=args[1]||'localhost';print(`Обмен с ${host} (127.0.0.1) пакетами по 32 байт:\nОтвет от 127.0.0.1: число байт=32 время=1мс TTL=128\nОтвет от 127.0.0.1: число байт=32 время<1мс TTL=128`),
+    },
+      'tasklist':()=>{let s='Имя PID ЦП ОЗУ\n';Object.values(OS.windows).forEach(w=>{s+=`${APPS.find(a=>a.id===w.appId)?.name||'?'} 1${Math.floor(Math.random()*900+100)} ${Math.floor(Math.random()*30)}% ${Math.floor(Math.random()*200+50)}МБ\n`});print(s)},
+      'kill':()=>{const w=Object.values(OS.windows)[0];if(w){closeWindow(w.id);print('Процесс завершён');}else print('Нет процессов');},
+      'tree':()=>print('C:.\n├── Documents\n├── Downloads\n└── Pictures'),
+      'банк':()=>{openApp('bank');print('Открытие NovaBank...');},
+      'настройки':()=>{openApp('settings');print('Открытие Параметры...');},
+      'камера':()=>{openApp('camera');print('Открытие Камера...');},
+      'часы':()=>{openApp('clock');print('Открытие Часы...');},
+      'qr':()=>{openApp('qr');print('Открытие QR-код...');},
+      'exit':()=>{const w=Object.values(OS.windows).find(x=>x.appId==='terminal');if(w)closeWindow(w.id);},
+      'shutdown':()=>{powerShutdown();},
+      'restart':()=>{powerRestart();},
+    };
+    if(cmds[c])cmds[c]();
+    else if(c)print(`'${c}' не является командой. Введите 'help'.`);
+  }
+  term.addEventListener('click',()=>{const l=out.lastChild;const inp=l?.querySelector('input');if(inp)inp.focus();});
+}
+
+/* Browser */
+function appBrowser(body,wid){
+  body.innerHTML=`<div class="br-root">
+    <div class="br-toolbar">
+      <button class="br-btn" id="${wid}_back">←</button>
+      <button class="br-btn" id="${wid}_fwd">→</button>
+      <button class="br-btn" id="${wid}_reload">⟳</button>
+      <input class="br-url" id="${wid}_url" placeholder="Поиск или URL">
+      <button class="br-btn" id="${wid}_newtab" title="Открыть в новой вкладке">⤴</button>
+    </div>
+    <div class="br-home" id="${wid}_home">
+      <div class="br-logo">🌐 NovaBrowser</div>
+      <div class="br-engines">
+        <div class="br-engine" data-engine="yandex">Яндекс</div>
+        <div class="br-engine" data-engine="google">Google</div>
+        <div class="br-engine" data-engine="bing">Bing</div>
+        <div class="br-engine" data-engine="ddg">DuckDuckGo</div>
+      </div>
+      <div class="br-links" id="${wid}_links"></div>
+    </div>
+    <iframe class="hidden" id="${wid}_frame" style="flex:1;border:none;width:100%"></iframe>
+  </div>`;
+  const url=body.querySelector(`#${wid}_url`);
+  const home=body.querySelector(`#${wid}_home`);
+  const frame=body.querySelector(`#${wid}_frame`);
+  const links=body.querySelector(`#${wid}_links`);
+  const quickLinks=[
+    {n:'Wikipedia',u:'https://wikipedia.org',i:'📚'},{n:'YouTube',u:'https://youtube.com',i:'▶️'},
+    {n:'GitHub',u:'https://github.com',i:'🐱'},{n:'Reddit',u:'https://reddit.com',i:'🤖'},
+    {n:'Яндекс',u:'https://yandex.ru',i:'🔴'},{n:'Mail.ru',u:'https://mail.ru',i:'📧'},
+    {n:'VK',u:'https://vk.com',i:'🅥'},{n:'Habr',u:'https://habr.com',i:'🟢'},
+    {n:'Stack',u:'https://stackoverflow.com',i:'📚'},{n:'Medium',u:'https://medium.com',i:'✍️'},
+  ];
+  quickLinks.forEach(l=>{
+    const d=document.createElement('div');d.className='br-link';
+    d.innerHTML=`<span class="emoji">${l.i}</span><span class="name">${l.n}</span>`;
+    d.addEventListener('click',()=>navigate(l.u));
+    links.appendChild(d);
+  });
+  body.querySelectorAll('.br-engine').forEach(e=>{
+    e.addEventListener('click',()=>{
+      const eng=e.dataset.engine;
+      const maps={yandex:'https://yandex.ru',google:'https://google.com',bing:'https://bing.com',ddg:'https://duckduckgo.com'};
+      navigate(maps[eng]);
+    });
+  });
+  url.addEventListener('keydown',e=>{if(e.key==='Enter'){search(url.value,e.target.dataset.engine||'yandex');}});
+  body.querySelector(`#${wid}_back`).addEventListener('click',()=>{if(frame.contentWindow){try{frame.contentWindow.history.back();}catch(e){}}});
+  body.querySelector(`#${wid}_fwd`).addEventListener('click',()=>{if(frame.contentWindow){try{frame.contentWindow.history.forward();}catch(e){}}});
+  body.querySelector(`#${wid}_reload`).addEventListener('click',()=>{if(!frame.classList.contains('hidden'))frame.src=frame.src;});
+  body.querySelector(`#${wid}_newtab`).addEventListener('click',()=>{const u=url.value||'https://yandex.ru';window.open(u,'_blank');});
+  function search(q,eng){
+    q=q.trim();if(!q)return;
+    if(q.match(/^https?:\/\//)){navigate(q);return;}
+    const maps={
+      yandex:`https://yandex.ru/search/?text=${encodeURIComponent(q)}`,
+      google:`https://google.com/search?igu=1&q=${encodeURIComponent(q)}`,
+      bing:`https://bing.com/search?q=${encodeURIComponent(q)}`,
+      ddg:`https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`
+    };
+    navigate(maps[eng]||maps.yandex);
+  }
+  function navigate(u){
+    url.value=u;home.classList.add('hidden');frame.classList.remove('hidden');
+    frame.src=u;frame.onerror=()=>{showNotification('Браузер','Не удалось загрузить страницу. Возможно, сайт блокирует iframe.','🌐');};
+  }
+}
+
+/* Bank */
+function appBank(body,wid){
+  const SK='NovaOS_bank';
+  let bank=JSON.parse(localStorage.getItem(SK)||'null');
+  body.innerHTML=`<div class="bank-root"><div class="bank-content" id="${wid}_content"></div></div>`;
+  const content=body.querySelector(`#${wid}_content`);
+  if(!bank){
+    content.innerHTML=`<div class="bank-login">
+      <div style="font-size:48px">🏦</div>
+      <h2>NovaBank</h2>
+      <p class="muted">Войдите или зарегистрируйтесь</p>
+      <input class="input" id="${wid}_name" placeholder="Ваше имя" style="width:200px">
+      <input class="input" id="${wid}_pin" type="password" maxlength="4" placeholder="PIN (4 цифры)" style="width:200px">
+      <button class="btn btn-accent" id="${wid}_login">Войти</button>
+    </div>`;
+    body.querySelector(`#${wid}_login`).addEventListener('click',()=>{
+      const name=body.querySelector(`#${wid}_name`).value.trim();
+      const pin=body.querySelector(`#${wid}_pin`).value.trim();
+      if(!name||pin.length<4){showNotification('NovaBank','Введите имя и 4-значный PIN','⚠️');return;}
+      bank={name,pin,cards:[{id:1,type:'MIR',num:'2200',balance:100000,active:true,limit:500000}],savings:[],deposits:[],credits:[],contacts:[],history:[{t:'Начисление',amt:100000,dt:new Date().toISOString(),type:'in'}],autopays:[]};
+      localStorage.setItem(SK,JSON.stringify(bank));
+      renderBank();
+    });
+  } else renderBank();
+  function save(){localStorage.setItem(SK,JSON.stringify(bank));}
+  function renderBank(){
+    const tabs=['Главная','Карты','Перевод','Между своими','Копилка','Вклады','Кредиты','Обмен','ЖКХ','Автоплатежи','Контакты','История'];
+    content.innerHTML=`<div class="bank-tabs" id="${wid}_tabs"></div><div id="${wid}_tab_content" style="flex:1;overflow-y:auto;padding:20px"></div>`;
+    const tb=content.querySelector(`#${wid}_tabs`);
+    tabs.forEach((t,i)=>{
+      const d=document.createElement('div');d.className='bank-tab'+(i===0?' active':'');d.textContent=t;
+      d.addEventListener('click',()=>{content.querySelectorAll('.bank-tab').forEach(x=>x.classList.remove('active'));d.classList.add('active');renderTab(i);});
+      tb.appendChild(d);
+    });
+    renderTab(0);
+  }
+  function renderTab(idx){
+    const tc=content.querySelector(`#${wid}_tab_content`);
+    if(idx===0){ // Главная
+      const total=bank.cards.reduce((s,c)=>s+c.balance,0)+(bank.savings.reduce((s,c)=>s+c.balance,0)||0);
+      const grads=['linear-gradient(135deg,#667eea,#764ba2)','linear-gradient(135deg,#f093fb,#f5576c)','linear-gradient(135deg,#4facfe,#00f2fe)'];
+      let cardsHTML='';
+      bank.cards.forEach((c,i)=>{
+        cardsHTML+=`<div class="bank-card-grad" style="background:${grads[i%3]};margin-bottom:12px">
+          <div class="b-type">${c.type}</div>
+          <div class="b-bal">${c.balance.toLocaleString('ru')} ₽</div>
+          <div class="b-num">•• ${c.num} ••••</div>
+        </div>`;
+      });
+      const recent=bank.history.slice(0,5).map(h=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${h.t}</span><span style="color:${h.type==='in'?'#4caf50':'#f44336'}">${h.type==='in'?'+':'−'}${h.amt} ₽</span></div>`).join('');
+      tc.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px"><div class="muted" style="font-size:12px">Общий баланс</div><div style="font-size:24px;font-weight:600">${total.toLocaleString('ru')} ₽</div></div>
+        <div style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px"><div class="muted" style="font-size:12px">Карт активно</div><div style="font-size:24px;font-weight:600">${bank.cards.filter(c=>c.active).length}</div></div>
+      </div>${cardsHTML}
+      <h4 style="margin:16px 0 8px">Последние операции</h4>${recent||'<p class="muted">Нет операций</p>'}
+      <h4 style="margin:16px 0 8px">Курсы валют</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="st-row" style="border:none"><span>USD</span><span>${(76.5+Math.random()*2).toFixed(2)}₽</span></div>
+        <div class="st-row" style="border:none"><span>EUR</span><span>${(82.3+Math.random()*2).toFixed(2)}₽</span></div>
+        <div class="st-row" style="border:none"><span>CNY</span><span>${(10.8+Math.random()).toFixed(2)}₽</span></div>
+      </div>`;
+    }
+    else if(idx===1){ // Карты
+      let html='<div style="display:grid;gap:12px">';
+      bank.cards.forEach((c,i)=>{
+        html+=`<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-size:16px;font-weight:600">${c.type} •• ${c.num}</span>
+            <span class="muted">${c.active?'Активна':'Заблокирована'}</span>
+          </div>
+          <div style="font-size:20px;margin-bottom:8px">${c.balance.toLocaleString('ru')} ₽</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="OS._bank('${wid}',${i},'block')">${c.active?'🔒 Блокировать':'🔓 Разблокировать'}</button>
+            <button class="btn" onclick="OS._bank('${wid}',${i},'pin')">🔑 Сменить PIN</button>
+          </div>
+        </div>`;
+      });
+      html+=`<button class="btn btn-accent" onclick="OS._bank('${wid}',-1,'new')">+ Выпустить карту</button></div>`;
+      tc.innerHTML=html;
+    }
+    else if(idx===2){ // Перевод
+      tc.innerHTML=`<h4 style="margin-bottom:12px">Перевод по имени и счёту</h4>
+        <input class="input w-full" id="${wid}_tname" placeholder="Имя получателя" style="margin-bottom:8px">
+        <input class="input w-full" id="${wid}_tacc" placeholder="Номер счёта (10 цифр)" style="margin-bottom:8px">
+        <input class="input w-full" id="${wid}_tamt" type="number" placeholder="Сумма ₽" style="margin-bottom:12px">
+        <button class="btn btn-accent" id="${wid}_tsend">Перевести</button>`;
+      body.querySelector(`#${wid}_tsend`).addEventListener('click',()=>{
+        const name=body.querySelector(`#${wid}_tname`).value.trim();
+        const acc=body.querySelector(`#${wid}_tacc`).value.trim();
+        const amt=parseInt(body.querySelector(`#${wid}_tamt`).value);
+        if(!name||!acc||!amt||amt<1){showNotification('Перевод','Заполните все поля','⚠️');return;}
+        if(amt>bank.cards[0].balance){showNotification('Перевод','Недостаточно средств','⚠️');return;}
+        bank.cards[0].balance-=amt;
+        bank.history.unshift({t:'Перевод → '+name,amt,dt:new Date().toISOString(),type:'out'});
+        save();renderTab(0);showNotification('Перевод','Переведено '+amt+'₽ '+name,'💸');
+      });
+    }
+    else if(idx===3){ // Между своими
+      const opts=bank.cards.map((c,i)=>`<option value="${i}">${c.type} •• ${c.num} (${c.balance}₽)</option>`).join('')+(bank.savings.length?bank.savings.map((s,i)=>`<option value="s${i}">Копилка "${s.name}" (${s.balance}₽)</option>`).join(''):'');
+      tc.innerHTML=`<h4 style="margin-bottom:12px">Между своими счетами</h4>
+        <p class="muted" style="margin-bottom:8px">Откуда:</p><select class="input w-full" id="${wid}_from" style="margin-bottom:8px">${opts}</select>
+        <p class="muted" style="margin-bottom:8px">Куда:</p><select class="input w-full" id="${wid}_to" style="margin-bottom:8px">${opts}</select>
+        <input class="input w-full" id="${wid}_mamt" type="number" placeholder="Сумма ₽" style="margin-bottom:12px">
+        <button class="btn btn-accent" id="${wid}_msend">Перевести</button>`;
+      body.querySelector(`#${wid}_msend`).addEventListener('click',()=>{
+        const f=body.querySelector(`#${wid}_from`).value,t=body.querySelector(`#${wid}_to`).value,amt=parseInt(body.querySelector(`#${wid}_mamt`).value);
+        if(!amt||amt<1)return;
+        const getAcc=v=>v.startsWith('s')?bank.savings[parseInt(v.slice(1))]:bank.cards[parseInt(v)];
+        if(amt>getAcc(f).balance){showNotification('Ошибка','Недостаточно средств','⚠️');return;}
+        getAcc(f).balance-=amt;getAcc(t).balance+=amt;
+        bank.history.unshift({t:'Между своими',amt,dt:new Date().toISOString(),type:'out'});
+        save();renderTab(0);showNotification('Перевод','Готово','✅');
+      });
+    }
+    else if(idx===4){ // Копилка
+      let html='<h4 style="margin-bottom:12px">Копилки</h4>';
+      bank.savings.forEach((s,i)=>{
+        html+=`<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px;margin-bottom:8px">
+          <div style="font-weight:600">${s.name}</div>
+          <div style="font-size:20px;margin:8px 0">${s.balance.toLocaleString('ru')} ₽</div>
+          <div class="muted" style="font-size:12px">Ставка ${s.rate}% годовых</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" onclick="OS._bankSav('${wid}',${i},'add')">Пополнить</button>
+            <button class="btn btn-danger" onclick="OS._bankSav('${wid}',${i},'close')">Закрыть</button>
+          </div>
+        </div>`;
+      });
+      html+=`<div style="margin-top:16px"><input class="input" id="${wid}_sname" placeholder="Название" style="margin-bottom:8px;width:100%"><input class="input" id="${wid}_srate" type="number" value="8" placeholder="Ставка %" style="margin-bottom:8px;width:100%"><button class="btn btn-accent" id="${wid}_screate">Создать копилку</button></div>`;
+      tc.innerHTML=html;
+      body.querySelector(`#${wid}_screate`).addEventListener('click',()=>{
+        bank.savings.push({name:body.querySelector(`#${wid}_sname`).value||'Копилка',balance:0,rate:parseInt(body.querySelector(`#${wid}_srate`).value)||8});
+        save();renderTab(4);showNotification('Копилка','Создана','🐷');
+      });
+    }
+    else if(idx===5){ // Вклады
+      const deps=[{m:3,r:6},{m:6,r:9},{m:12,r:11},{m:24,r:13}];
+      let html='<h4 style="margin-bottom:12px">Открыть вклад</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+      deps.forEach(d=>{
+        html+=`<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:24px;font-weight:600">${d.r}%</div><div class="muted">на ${d.m} мес.</div>
+          <input class="input" type="number" placeholder="Сумма" id="${wid}_dep${d.m}" style="margin:8px 0;width:100%">
+          <button class="btn btn-accent" onclick="OS._bankDep('${wid}',${d.m},${d.r})">Открыть</button>
+        </div>`;
+      });
+      html+='</div><h4 style="margin:16px 0 8px">Активные вклады</h4>';
+      if(bank.deposits.length===0)html+='<p class="muted">Нет активных вкладов</p>';
+      else bank.deposits.forEach(d=>{html+=`<div style="background:rgba(255,255,255,.06);border-radius:8px;padding:12px;margin-bottom:8px">${d.amount}₽ под ${d.rate}% на ${d.months}мес (до ${d.endDate})</div>`;});
+      tc.innerHTML=html;
+    }
+    else if(idx===6){ // Кредиты
+      tc.innerHTML=`<h4 style="margin-bottom:12px">Калькулятор кредита</h4>
+        <input class="input w-full" id="${wid}_cramt" type="number" value="500000" placeholder="Сумма ₽" style="margin-bottom:8px">
+        <input class="input w-full" id="${wid}_crterm" type="number" value="12" placeholder="Срок (мес)" style="margin-bottom:8px">
+        <input class="input w-full" id="${wid}_crrate" type="number" value="15" placeholder="Ставка %" style="margin-bottom:12px">
+        <button class="btn btn-accent" id="${wid}_crcalc">Рассчитать</button>
+        <div id="${wid}_crresult" style="margin-top:16px"></div>`;
+      body.querySelector(`#${wid}_crcalc`).addEventListener('click',()=>{
+        const p=parseInt(body.querySelector(`#${wid}_cramt`).value)||0;
+        const n=parseInt(body.querySelector(`#${wid}_crterm`).value)||1;
+        const r=(parseInt(body.querySelector(`#${wid}_crrate`).value)||15)/100/12;
+        const m=p*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+        const total=m*n,over=total-p;
+        body.querySelector(`#${wid}_crresult`).innerHTML=`<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px">
+          <div class="muted">Ежемесячный платёж</div><div style="font-size:24px;font-weight:600">${Math.round(m).toLocaleString('ru')} ₽</div>
+          <div class="muted mt-8">Переплата</div><div style="font-size:18px">${Math.round(over).toLocaleString('ru')} ₽</div>
+          <div class="muted mt-8">Итого</div><div style="font-size:18px">${Math.round(total).toLocaleString('ru')} ₽</div>
+        </div>`;
+      });
+    }
+    else if(idx===7){ // Обмен
+      const rates={USD:76.5,EUR:82.3,CNY:10.8,GBP:95.2,JPY:0.52,KZT:0.16};
+      tc.innerHTML='<h4 style="margin-bottom:12px">Обмен валют</h4>';
+      Object.entries(rates).forEach(([c,r])=>{
+        tc.innerHTML+=`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${c}</span><span>${r.toFixed(2)} ₽</span></div>`;
+      });
+    }
+    else if(idx===8){ // ЖКХ
+      const services=[{n:'Электричество',amt:2400,i:'⚡'},{n:'Вода',amt:800,i:'💧'},{n:'Газ',amt:600,i:'🔥'},{n:'Отопление',amt:3500,i:'🌡️'},{n:'Капремонт',amt:500,i:'🏢'},{n:'Интернет',amt:700,i:'🌐'}];
+      tc.innerHTML='<h4 style="margin-bottom:12px">Оплата ЖКХ</h4>';
+      services.forEach(s=>{
+        const d=document.createElement('div');d.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,.06);border-radius:8px;margin-bottom:8px';
+        d.innerHTML=`<span>${s.i} ${s.n}</span><span><span style="margin-right:8px">${s.amt}₽</span></span>`;
+        const b=document.createElement('button');b.className='btn btn-accent';b.textContent='Оплатить';
+        b.addEventListener('click',()=>{
+          if(bank.cards[0].balance<s.amt){showNotification('ЖКХ','Недостаточно средств','⚠️');return;}
+          bank.cards[0].balance-=s.amt;bank.history.unshift({t:'ЖКХ: '+s.n,amt:s.amt,dt:new Date().toISOString(),type:'out'});save();renderTab(0);
+          showNotification('ЖКХ',s.n+' оплачено','✅');
+        });
+        d.querySelector('span:last-child').appendChild(b);tc.appendChild(d);
+      });
+    }
+    else if(idx===9){ // Автоплатежи
+      tc.innerHTML=`<h4 style="margin-bottom:12px">Автоплатежи</h4>
+        <input class="input w-full" id="${wid}_apname" placeholder="Название" style="margin-bottom:8px">
+        <input class="input w-full" id="${wid}_apamt" type="number" placeholder="Сумма" style="margin-bottom:8px">
+        <select class="input w-full" id="${wid}_apperiod" style="margin-bottom:8px"><option value="1">Каждый день</option><option value="7">Каждую неделю</option><option value="30">Каждый месяц</option></select>
+        <button class="btn btn-accent" id="${wid}_apcreate">Создать</button>
+        <div id="${wid}_aplist" style="margin-top:16px"></div>`;
+      body.querySelector(`#${wid}_apcreate`).addEventListener('click',()=>{
+        bank.autopays.push({name:body.querySelector(`#${wid}_apname`).value,amt:parseInt(body.querySelector(`#${wid}_apamt`).value),period:parseInt(body.querySelector(`#${wid}_apperiod`).value)});
+        save();renderTab(9);showNotification('Автоплатеж','Создан','🔄');
+      });
+      bank.autopays.forEach((a,i)=>{body.querySelector(`#${wid}_aplist`).innerHTML+=`<div style="background:rgba(255,255,255,.06);padding:12px;border-radius:8px;margin-bottom:8px">${a.name}: ${a.amt}₽ каждые ${a.period} дн.</div>`;});
+    }
+    else if(idx===10){ // Контакты
+      tc.innerHTML=`<h4 style="margin-bottom:12px">Контакты</h4>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input class="input" id="${wid}_cn" placeholder="Имя" style="flex:1">
+          <input class="input" id="${wid}_ca" placeholder="Счёт" style="flex:1">
+          <button class="btn btn-accent" id="${wid}_ca_dd">Добавить</button>
+        </div><div id="${wid}_clist"></div>`;
+      body.querySelector(`#${wid}_ca_dd`).addEventListener('click',()=>{
+        bank.contacts.push({name:body.querySelector(`#${wid}_cn`).value,acc:body.querySelector(`#${wid}_ca`).value});save();renderTab(10);
+      });
+      bank.contacts.forEach((c,i)=>{
+        const d=document.createElement('div');d.style.cssText='background:rgba(255,255,255,.06);padding:12px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center';
+        d.innerHTML=`<span>${c.name} (${c.acc})</span>`;
+        const b=document.createElement('button');b.className='btn';b.textContent='Перевести';
+        b.addEventListener('click',()=>{const amt=parseInt(prompt('Сумма перевода:', '1000'));if(amt&&amt<=bank.cards[0].balance){bank.cards[0].balance-=amt;bank.history.unshift({t:'Перевод → '+c.name,amt,dt:new Date().toISOString(),type:'out'});save();renderTab(0);showNotification('Перевод','Готово','✅');}});
+        const dBtn=document.createElement('button');dBtn.className='btn btn-danger';dBtn.textContent='✕';dBtn.style.marginLeft='8px';
+        dBtn.addEventListener('click',()=>{bank.contacts.splice(i,1);save();renderTab(10);});
+        d.appendChild(b);d.appendChild(dBtn);body.querySelector(`#${wid}_clist`).appendChild(d);
+      });
+    }
+    else if(idx===11){ // История
+      tc.innerHTML=`<h4 style="margin-bottom:12px">История операций</h4>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn" onclick="OS._bankHist('${wid}','all')">Все</button>
+          <button class="btn" onclick="OS._bankHist('${wid}','in')">Поступления</button>
+          <button class="btn" onclick="OS._bankHist('${wid}','out')">Списания</button>
+        </div><div id="${wid}_hlist"></div>`;
+      OS._bankHist(wid,'all');
+    }
+  }
+  OS._bank=function(wid,i,act){
+    if(act==='new'){bank.cards.push({id:Date.now(),type:'Visa',num:String(Math.floor(Math.random()*9000+1000)),balance:0,active:true,limit:300000});save();renderTab(1);showNotification('Карта','Выпущена','💳');}
+    else if(act==='block'){bank.cards[i].active=!bank.cards[i].active;save();renderTab(1);}
+    else if(act==='pin'){const np=prompt('Новый PIN (4 цифры):');if(np&&np.length===4){bank.pin=np;save();showNotification('PIN','Изменён','🔑');}}
+  };
+  OS._bankSav=function(wid,i,act){
+    if(act==='add'){const a=parseInt(prompt('Сумма пополнения:','1000'));if(a&&a<=bank.cards[0].balance){bank.cards[0].balance-=a;bank.savings[i].balance+=a;save();renderTab(4);showNotification('Копилка','Пополнена','🐷');}}
+    else if(act==='close'){bank.cards[0].balance+=bank.savings[i].balance;bank.savings.splice(i,1);save();renderTab(4);showNotification('Копилка','Закрыта','✅');}
+  };
+  OS._bankDep=function(wid,m,r){const a=parseInt(document.getElementById(wid+'_dep'+m).value);if(a&&a<=bank.cards[0].balance){bank.cards[0].balance-=a;const end=new Date();end.setMonth(end.getMonth()+m);bank.deposits.push({amount:a,rate:r,months:m,endDate:end.toLocaleDateString('ru')});save();renderTab(5);showNotification('Вклад','Открыт','💰');}};
+  OS._bankHist=function(wid,filter){
+    const list=document.getElementById(wid+'_hlist');
+    const filtered=filter==='all'?bank.history:bank.history.filter(h=>h.type===filter);
+    list.innerHTML=filtered.length?filtered.map(h=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${h.t}</span><span style="color:${h.type==='in'?'#4caf50':'#f44336'}">${h.type==='in'?'+':'−'}${h.amt} ₽</span></div>`).join(''):'<p class="muted">Нет операций</p>';
+  };
+}
+
+/* App Store */
+function appStore(body,wid){
+  const storeApps=[
+    {n:'SnakeX',i:'🐍',cat:'Игры',sz:'12 МБ',desc:'Классическая змейка'},
+    {n:'CodeEdit',i:'💻',cat:'Продуктивность',sz:'45 МБ',desc:'Редактор кода'},
+    {n:'ArtStudio',i:'🎨',cat:'Медиа',sz:'80 МБ',desc:'Графический редактор'},
+    {n:'VidPlayer',i:'🎬',cat:'Медиа',sz:'35 МБ',desc:'Видеоплеер'},
+    {n:'TaskList',i:'✅',cat:'Продуктивность',sz:'8 МБ',desc:'Менеджер задач'},
+    {n:'Chess',i:'♟️',cat:'Игры',sz:'20 МБ',desc:'Шахматы онлайн'},
+    {n:'MusicHub',i:'🎶',cat:'Медиа',sz:'55 МБ',desc:'Музыкальный плеер'},
+    {n:'DiskClean',i:'🧹',cat:'Утилиты',sz:'5 МБ',desc:'Очистка диска'},
+    {n:'WeatherPro',i:'🌦️',cat:'Утилиты',sz:'15 МБ',desc:'Детальный прогноз'},
+    {n:'Calendar+',i:'📅',cat:'Продуктивность',sz:'18 МБ',desc:'Умный календарь'},
+    {n:'FileZip',i:'📦',cat:'Утилиты',sz:'10 МБ',desc:'Архиватор файлов'},
+    {n:'Puzzle',i:'🧩',cat:'Игры',sz:'25 МБ',desc:'Головоломки'},
+  ];
+  body.innerHTML=`<div class="as-root">
+    <div class="as-header">
+      <span style="font-size:20px">🛒 Магазин приложений</span>
+      <input class="input" id="${wid}_search" placeholder="Поиск" style="flex:1">
+      <div class="as-cats" id="${wid}_cats">
+        <div class="as-cat active" data-cat="all">Все</div>
+        <div class="as-cat" data-cat="Игры">Игры</div>
+        <div class="as-cat" data-cat="Продуктивность">Продуктивность</div>
+        <div class="as-cat" data-cat="Медиа">Медиа</div>
+        <div class="as-cat" data-cat="Утилиты">Утилиты</div>
+      </div>
+    </div>
+    <div class="as-grid" id="${wid}_grid"></div>
+  </div>`;
+  let cat='all',query='';
+  const grid=body.querySelector(`#${wid}_grid`);
+  body.querySelectorAll('.as-cat').forEach(c=>{c.addEventListener('click',()=>{body.querySelectorAll('.as-cat').forEach(x=>x.classList.remove('active'));c.classList.add('active');cat=c.dataset.cat;renderGrid();});});
+  body.querySelector(`#${wid}_search`).addEventListener('input',e=>{query=e.target.value.toLowerCase();renderGrid();});
+  function renderGrid(){
+    grid.innerHTML='';
+    storeApps.filter(a=>(cat==='all'||a.cat===cat)&&a.n.toLowerCase().includes(query)).forEach(a=>{
+      const installed=localStorage.getItem('NovaOS_installed_'+a.n);
+      const d=document.createElement('div');d.className='as-card';
+      d.innerHTML=`<span class="emoji">${a.i}</span><div class="info"><div class="name">${a.n}</div><div class="desc">${a.desc}</div><div class="size">${a.sz} · ${a.cat}</div></div>`;
+      const b=document.createElement('button');b.className='btn';
+      if(installed){b.textContent='Открыть';b.classList.add('btn-accent');b.addEventListener('click',()=>showNotification(a.n,'Открытие...','🚀'));}
+      else{
+        b.textContent='Установить';
+        b.addEventListener('click',()=>{
+          b.textContent='0%';b.disabled=true;
+          let p=0;
+          const iv=setInterval(()=>{
+            p+=Math.random()*15;if(p>=100){p=100;b.textContent='Установка...';
+              setTimeout(()=>{
+                clearInterval(iv);localStorage.setItem('NovaOS_installed_'+a.n,'1');
+                b.textContent='Открыть';b.classList.add('btn-accent');b.disabled=false;
+                showNotification('Магазин',a.n+' установлено','✅');
+                addDesktopIcon(a.n,a.i);
+              },800);
+            } else b.textContent=Math.floor(p)+'%';
+          },200);
+        });
+      }
+      d.appendChild(b);grid.appendChild(d);
+    });
+  }
+  renderGrid();
+}
+function addDesktopIcon(name,icon){
+  const c=document.getElementById('desktop-icons');
+  const d=document.createElement('div');d.className='desk-icon';d.dataset.custom=name;
+  d.innerHTML=`<span class="emoji">${icon}</span><span class="label">${name}</span>`;
+  d.addEventListener('click',e=>{e.stopPropagation();document.querySelectorAll('.desk-icon').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');});
+  d.addEventListener('dblclick',()=>showNotification(name,'Приложение запущено','🚀'));
+  c.appendChild(d);
+}
+
+/* Camera */
+function appCamera(body,wid){
+  body.innerHTML=`<div class="cam-root">
+    <div class="cam-toolbar">
+      <button class="btn" id="${wid}_photo">📷 Фото</button>
+      <button class="btn" id="${wid}_video">🎥 Видео</button>
+      <button class="btn" id="${wid}_switch">🔄 Камера</button>
+    </div>
+    <div class="cam-vid mirror" id="${wid}_vid">
+      <video id="${wid}_video" autoplay playsinline></video>
+      <div class="cam-corner cam-tl"></div><div class="cam-corner cam-tr"></div>
+      <div class="cam-corner cam-bl"></div><div class="cam-corner cam-br"></div>
+      <div class="cam-rec" id="${wid}_rec"><span style="width:8px;height:8px;border-radius:50%;background:#fff"></span> REC <span id="${wid}_rectime">0:00</span></div>
+      <div class="cam-flash" id="${wid}_flash"></div>
+      <div class="cam-gallery" id="${wid}_gallery"></div>
+      <div class="cam-err hidden" id="${wid}_err">
+        <div style="font-size:48px">📷</div>
+        <p>Не удалось получить доступ к камере. Проверьте разрешения.</p>
+        <button class="btn btn-accent" id="${wid}_retry">Повторить</button>
+      </div>
+    </div>
+  </div>`;
+  const video=body.querySelector(`#${wid}_video`);
+  const vid=body.querySelector(`#${wid}_vid`);
+  const err=body.querySelector(`#${wid}_err`);
+  let stream=null,recorder=null,mode='photo',chunks=[],gallery=[],recTimer=null,recSecs=0,facing='user';
+  function startCam(){
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    err.classList.add('hidden');video.style.display='block';
+    navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false}).then(s=>{stream=s;video.srcObject=s;}).catch(e=>{
+      video.style.display='none';err.classList.remove('hidden');
+    });
+  }
+  startCam();
+  body.querySelector(`#${wid}_retry`).addEventListener('click',startCam);
+  body.querySelector(`#${wid}_switch`).addEventListener('click',()=>{facing=facing==='user'?'environment':'user';vid.classList.toggle('mirror',facing==='user');startCam();});
+  body.querySelector(`#${wid}_photo`).addEventListener('click',()=>{
+    mode='photo';
+    if(!stream)return;
+    const canvas=document.createElement('canvas');
+    canvas.width=video.videoWidth||640;canvas.height=video.videoHeight||480;
+    const ctx=canvas.getContext('2d');
+    if(facing==='user')ctx.scale(-1,1),ctx.translate(-canvas.width,0);
+    ctx.drawImage(video,0,0,canvas.width,canvas.height);
+    const url=canvas.toDataURL('image/png');
+    gallery.unshift({type:'img',url});
+    renderGallery();
+    const flash=body.querySelector(`#${wid}_flash`);flash.classList.add('flash');setTimeout(()=>flash.classList.remove('flash'),300);
+  });
+  body.querySelector(`#${wid}_video`).addEventListener('click',()=>{
+    if(mode==='video'&&recorder&&recorder.state==='recording'){
+      recorder.stop();mode='photo';
+      body.querySelector(`#${wid}_video_btn`).textContent='🎥 Запись';
+    } else {
+      mode='video';
+      if(!stream)return;
+      chunks=[];
+      try{recorder=new MediaRecorder(stream);}catch(e){showNotification('Камера','Запись не поддерживается','⚠️');return;}
+      recorder.ondataavailable=e=>chunks.push(e.data);
+      recorder.onstop=()=>{
+        const blob=new Blob(chunks,{type:'video/webm'});
+        const url=URL.createObjectURL(blob);
+        gallery.unshift({type:'video',url});
+        renderGallery();
+        body.querySelector(`#${wid}_rec`).classList.remove('show');
+        clearInterval(recTimer);
+      };
+      recorder.start();
+      body.querySelector(`#${wid}_rec`).classList.add('show');
+      recSecs=0;
+      recTimer=setInterval(()=>{
+        recSecs++;
+        body.querySelector(`#${wid}_rectime`).textContent=`${Math.floor(recSecs/60)}:${String(recSecs%60).padStart(2,'0')}`;
+      },1000);
+    }
+  });
+  function renderGallery(){
+    const g=body.querySelector(`#${wid}_gallery`);g.innerHTML='';
+    gallery.forEach((item,i)=>{
+      if(item.type==='img'){const img=document.createElement('img');img.className='cam-thumb';img.src=item.url;img.addEventListener('click',()=>viewGallery(i));g.appendChild(img);}
+      else{const v=document.createElement('video');v.className='cam-thumb';v.src=item.url;v.addEventListener('click',()=>viewGallery(i));g.appendChild(v);}
+    });
+  }
+  function viewGallery(i){
+    const item=gallery[i];
+    const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px';
+    const el=item.type==='img'?new Image():document.createElement('video');
+    if(item.type==='video')el.controls=true;
+    el.src=item.url;el.style.maxWidth='80%';el.style.maxHeight='70%';el.style.borderRadius='12px';
+    const nav=document.createElement('div');nav.style.cssText='display:flex;gap:16px;font-size:28px;color:#fff;cursor:pointer';
+    nav.innerHTML=`<span id="${wid}_nav_prev">◀</span><span id="${wid}_nav_dl">⬇</span><span id="${wid}_nav_next">▶</span><span id="${wid}_nav_close">✕</span>`;
+    ov.appendChild(el);ov.appendChild(nav);document.body.appendChild(ov);
+    nav.querySelector(`#${wid}_nav_close`).onclick=()=>ov.remove();
+    nav.querySelector(`#${wid}_nav_prev`).onclick=()=>{ov.remove();viewGallery(Math.max(0,i-1));};
+    nav.querySelector(`#${wid}_nav_next`).onclick=()=>{ov.remove();viewGallery(Math.min(gallery.length-1,i+1));};
+    nav.querySelector(`#${wid}_nav_dl`).onclick=()=>{
+      const a=document.createElement('a');a.href=item.url;a.download=`novaos_${Date.now()}.${item.type==='img'?'png':'webm'}`;a.click();
+    };
+  }
+}
+
+/* Clock */
+function appClock(body,wid){
+  body.innerHTML=`<div style="display:flex;flex-direction:column;height:100%">
+    <div class="clk-tabs">
+      <div class="clk-tab active" data-t="analog">Аналоговые</div>
+      <div class="clk-tab" data-t="world">Мировые</div>
+      <div class="clk-tab" data-t="stop">Секундомер</div>
+      <div class="clk-tab" data-t="timer">Таймер</div>
+    </div>
+    <div style="flex:1;overflow-y:auto" id="${wid}_content"></div>
+  </div>`;
+  const content=body.querySelector(`#${wid}_content`);
+  body.querySelectorAll('.clk-tab').forEach(t=>{t.addEventListener('click',()=>{body.querySelectorAll('.clk-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');render(t.dataset.t);});});
+  let interval=null;
+  function render(type){
+    if(interval)clearInterval(interval);
+    if(type==='analog'){
+      content.innerHTML=`<div class="clk-analog"><canvas width="240" height="240" id="${wid}_canvas"></canvas><div id="${wid}_digital" style="font-size:28px;font-weight:300"></div></div>`;
+      const cv=body.querySelector(`#${wid}_canvas`),ctx=cv.getContext('2d');
+      interval=setInterval(()=>{
+        const now=new Date();
+        ctx.clearRect(0,0,240,240);
+        ctx.strokeStyle='var(--text)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(120,120,110,0,Math.PI*2);ctx.stroke();
+        for(let i=0;i<60;i++){
+          const a=i*Math.PI/30-Math.PI/2;
+          ctx.beginPath();
+          ctx.moveTo(120+Math.cos(a)*100,120+Math.sin(a)*100);
+          ctx.lineTo(120+Math.cos(a)*(i%5===0?88:95),120+Math.sin(a)*(i%5===0?88:95));
+          ctx.lineWidth=i%5===0?3:1;ctx.strokeStyle=i%5===0?'var(--accent)':'var(--text-gray)';ctx.stroke();
+        }
+        const h=now.getHours()%12,m=now.getMinutes(),s=now.getSeconds();
+        const drawH=(ang,len,w,c)=>{const a=ang-Math.PI/2;ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(120,120);ctx.lineTo(120+Math.cos(a)*len,120+Math.sin(a)*len);ctx.stroke();};
+        drawH(h*Math.PI/6+m*Math.PI/360,50,4,'var(--text)');
+        drawH(m*Math.PI/30,70,3,'var(--text)');
+        drawH(s*Math.PI/30,85,1.5,'var(--accent)');
+        ctx.fillStyle='var(--accent)';ctx.beginPath();ctx.arc(120,120,5,0,Math.PI*2);ctx.fill();
+        body.querySelector(`#${wid}_digital`).textContent=now.toLocaleTimeString('ru-RU');
+      },1000);
+    }
+    else if(type==='world'){
+      const cities=[{n:'Москва',tz:3,f:'🇷🇺'},{n:'Лондон',tz:0,f:'🇬🇧'},{n:'Нью-Йорк',tz:-5,f:'🇺🇸'},{n:'Токио',tz:9,f:'🇯🇵'},{n:'Дубай',tz:4,f:'🇦🇪'},{n:'Пекин',tz:8,f:'🇨🇳'}];
+      content.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px">';
+      const updateTime=()=>{
+        content.querySelectorAll('.wt-city').forEach((el,i)=>{
+          const now=new Date();const utc=now.getTime()+now.getTimezoneOffset()*60000;
+          const ct=new Date(utc+cities[i].tz*3600000);
+          el.querySelector('.wt-time').textContent=ct.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+        });
+      };
+      cities.forEach(c=>{
+        content.innerHTML+=`<div class="wt-city" style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px;text-align:center"><div style="font-size:28px">${c.f}</div><div style="font-weight:600;margin:4px 0">${c.n}</div><div class="wt-time" style="font-size:24px;font-weight:300"></div></div>`;
+      });
+      updateTime();interval=setInterval(updateTime,1000);
+    }
+    else if(type==='stop'){
+      content.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px">
+        <div id="${wid}_st" style="font-size:48px;font-weight:200">00:00.00</div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn-accent" id="${wid}_st_start">Старт</button>
+          <button class="btn" id="${wid}_st_reset">Сброс</button>
+          <button class="btn" id="${wid}_st_lap">Круг</button>
+        </div>
+        <div id="${wid}_laps" style="width:100%;max-width:300px;overflow-y:auto;max-height:200px"></div>
+      </div>`;
+      let ms=0,startT=0,running=false,laps=[];
+      const stEl=body.querySelector(`#${wid}_st`);
+      function fmt(ms){const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),cs=Math.floor((ms%1000)/10);return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;}
+      body.querySelector(`#${wid}_st_start`).addEventListener('click',function(){running=!running;if(running){this.textContent='Пауза';startT=Date.now()-ms;interval=setInterval(()=>{ms=Date.now()-startT;stEl.textContent=fmt(ms);},10);}else{this.textContent='Старт';clearInterval(interval);}});
+      body.querySelector(`#${wid}_st_reset`).addEventListener('click',()=>{clearInterval(interval);running=false;ms=0;stEl.textContent='00:00.00';body.querySelector(`#${wid}_st_start`).textContent='Старт';laps=[];body.querySelector(`#${wid}_laps`).innerHTML='';});
+      body.querySelector(`#${wid}_st_lap`).addEventListener('click',()=>{if(running){laps.unshift(fmt(ms));body.querySelector(`#${wid}_laps`).innerHTML=laps.map((l,i)=>`<div style="padding:6px;border-bottom:1px solid var(--border);font-family:monospace">Круг ${laps.length-i}: ${l}</div>`).join('');}});
+    }
+    else if(type==='timer'){
+      content.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px">
+        <div style="display:flex;gap:8px"><input class="input" type="number" value="0" min="0" max="99" style="width:60px;text-align:center" placeholder="ч"><input class="input" type="number" value="5" min="0" max="59" style="width:60px;text-align:center" placeholder="м"><input class="input" type="number" value="0" min="0" max="59" style="width:60px;text-align:center" placeholder="с"></div>
+        <div id="${wid}_tm" style="font-size:48px;font-weight:200">00:05:00</div>
+        <button class="btn btn-accent" id="${wid}_tm_start">Старт</button>
+      </div>`;
+      let running=false,secs=0;
+      const inputs=content.querySelectorAll('input');
+      const tmEl=body.querySelector(`#${wid}_tm`);
+      function calc(){return parseInt(inputs[0].value)*3600+parseInt(inputs[1].value)*60+parseInt(inputs[2].value);}
+      function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;}
+      body.querySelector(`#${wid}_tm_start`).addEventListener('click',function(){
+        if(!running){secs=calc();if(secs<=0)return;running=true;this.textContent='Стоп';tmEl.textContent=fmt(secs);
+          interval=setInterval(()=>{secs--;tmEl.textContent=fmt(secs);if(secs<=0){clearInterval(interval);running=false;this.textContent='Старт';showNotification('Таймер','Время вышло!','⏰');}},1000);
+        }else{clearInterval(interval);running=false;this.textContent='Старт';}
+      });
+    }
+  }
+  render('analog');
+}
+
+/* QR Code */
+function appQR(body,wid){
+  body.innerHTML=`<div class="qr-root">
+    <div class="qr-types">
+      <button class="qr-type-btn active" data-t="text">Текст</button>
+      <button class="qr-type-btn" data-t="url">URL</button>
+      <button class="qr-type-btn" data-t="tel">Телефон</button>
+      <button class="qr-type-btn" data-t="email">Email</button>
+      <button class="qr-type-btn" data-t="wifi">Wi-Fi</button>
+      <button class="qr-type-btn" data-t="pay">Платёж</button>
+    </div>
+    <input class="input w-full" id="${wid}_input" placeholder="Введите текст..." style="margin-bottom:8px">
+    <input class="input w-full hidden" id="${wid}_wifi_pass" placeholder="Пароль Wi-Fi" style="margin-bottom:8px">
+    <input class="input w-full hidden" id="${wid}_wifi_ssid" placeholder="SSID сети" style="margin-bottom:8px">
+    <button class="btn btn-accent w-full" id="${wid}_gen">Сгенерировать</button>
+    <div class="qr-canvas-wrap"><canvas id="${wid}_canvas" width="200" height="200" style="margin-top:12px"></canvas></div>
+    <div class="qr-decoded" id="${wid}_decoded"></div>
+  </div>`;
+  let type='text';
+  body.querySelectorAll('.qr-type-btn').forEach(b=>{b.addEventListener('click',()=>{
+    body.querySelectorAll('.qr-type-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');type=b.dataset.t;
+    const inp=body.querySelector(`#${wid}_input`),wp=body.querySelector(`#${wid}_wifi_pass`),ws=body.querySelector(`#${wid}_wifi_ssid`);
+    wp.classList.add('hidden');ws.classList.add('hidden');
+    if(type==='wifi'){inp.placeholder='Тип шифрования (WPA)';ws.classList.remove('hidden');wp.classList.remove('hidden');}
+    else if(type==='url')inp.placeholder='https://...';
+    else if(type==='tel')inp.placeholder='+7...';
+    else if(type==='email')inp.placeholder='user@mail.com';
+    else if(type==='pay')inp.placeholder='Сумма (₽)';
+    else inp.placeholder='Введите текст...';
+  });});
+  body.querySelector(`#${wid}_gen`).addEventListener('click',()=>{
+    let data=body.querySelector(`#${wid}_input`).value;
+    if(type==='url'&&data&&!data.startsWith('http'))data='https://'+data;
+    if(type==='tel')data='tel:'+data;
+    if(type==='email')data='mailto:'+data;
+    if(type==='wifi'){const s=body.querySelector(`#${wid}_wifi_ssid`).value,p=body.querySelector(`#${wid}_wifi_pass`).value;data=`WIFI:T:WPA;S:${s};P:${p};;`;}
+    if(type==='pay')data=`novabank:pay?amount=${data}rub`;
+    body.querySelector(`#${wid}_decoded`).textContent='Данные: '+data;
+    generateQR(body.querySelector(`#${wid}_canvas`),data);
+  });
+  function generateQR(canvas,data){
+    const ctx=canvas.getContext('2d');
+    const size=25;const cellSize=200/size;
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);ctx.fillStyle='#000';
+    // Simple visual QR-like pattern (not a real QR, but has markers)
+    const grid=[];
+    for(let r=0;r<size;r++){grid[r]=[];for(let c=0;c<size;c++)grid[r][c]=Math.random()>0.5;}
+    function drawMarker(R,C){
+      for(let r=0;r<7;r++)for(let c=0;c<7;c++){
+        if(r===0||r===6||c===0||c===6||(r>=2&&r<=4&&c>=2&&c<=4))grid[R+r][C+c]=1;else grid[R+r][C+c]=0;
+      }
+    }
+    drawMarker(0,0);drawMarker(0,18);drawMarker(18,0);
+    for(let r=0;r<size;r++)for(let c=0;c<size;c++){
+      if(grid[r][c])ctx.fillRect(c*cellSize,r*cellSize,cellSize,cellSize);
+    }
+  }
+}
+
+/* Dictaphone */
+function appDictaphone(body,wid){
+  body.innerHTML=`<div class="dc-root">
+    <button class="dc-btn" id="${wid}_btn">🎤</button>
+    <div class="dc-timer" id="${wid}_timer">00:00</div>
+    <div class="dc-list" id="${wid}_list"></div>
+  </div>`;
+  let recorder=null,chunks=[],recording=false,secs=0,interval=null;
+  const btn=body.querySelector(`#${wid}_btn`),timer=body.querySelector(`#${wid}_timer`),list=body.querySelector(`#${wid}_list`);
+  let records=JSON.parse(localStorage.getItem('NovaOS_records')||'[]');
+  renderList();
+  btn.addEventListener('click',async()=>{
+    if(!recording){
+      try{
+        const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        chunks=[];recorder=new MediaRecorder(stream);
+        recorder.ondataavailable=e=>chunks.push(e.data);
+        recorder.onstop=()=>{
+          const blob=new Blob(chunks,{type:'audio/webm'});
+          const url=URL.createObjectURL(blob);
+          records.unshift({url,time:secs,date:new Date().toLocaleString('ru'),size:Math.round(blob.size/1024)+' КБ'});
+          localStorage.setItem('NovaOS_records',JSON.stringify(records.map(r=>({...r,url:undefined}))));
+          renderList();
+        };
+        recorder.start();recording=true;btn.classList.add('recording');btn.textContent='⏹';secs=0;
+        interval=setInterval(()=>{secs++;timer.textContent=`${String(Math.floor(secs/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`;},1000);
+      }catch(e){showNotification('Диктофон','Нет доступа к микрофону','⚠️');}
+    } else {
+      recorder.stop();recording=false;btn.classList.remove('recording');btn.textContent='🎤';clearInterval(interval);timer.textContent='00:00';
+      stream&&stream.getTracks().forEach(t=>t.stop());
+    }
+  });
+  function renderList(){
+    list.innerHTML='';
+    if(records.length===0){list.innerHTML='<p class="muted center">Нет записей</p>';return;}
+    records.forEach(r=>{
+      const d=document.createElement('div');d.className='dc-item';
+      d.innerHTML=`<div><div style="font-size:13px">${r.date}</div><div class="size">${r.size}</div></div>`;
+      if(r.url){const a=document.createElement('audio');a.controls=true;a.src=r.url;d.appendChild(a);
+        const dl=document.createElement('span');dl.className='dc-download';dl.textContent='⬇';dl.addEventListener('click',()=>{const link=document.createElement('a');link.href=r.url;link.download=`record_${r.date}.webm`;link.click();});d.appendChild(dl);}
+      list.appendChild(d);
+    });
+  }
+}
+
+/* Music */
+function appMusic(body,wid){
+  const tracks=[{t:'Neon Dreams',a:'Synthwave',c:'linear-gradient(135deg,#667eea,#764ba2)'},{t:'Ocean Drive',a:'Chillwave',c:'linear-gradient(135deg,#4facfe,#00f2fe)'},{t:'Midnight Run',a:'Darkwave',c:'linear-gradient(135deg,#f093fb,#f5576c)'}];
+  let cur=0,playing=false;
+  body.innerHTML=`<div class="mu-root">
+    <div class="mu-cover" id="${wid}_cover" style="background:${tracks[0].c}"></div>
+    <div class="mu-info"><div class="mu-title" id="${wid}_title">${tracks[0].t}</div><div class="mu-artist" id="${wid}_artist">${tracks[0].a}</div></div>
+    <div style="width:100%"><div class="mu-prog"><div class="mu-prog-fill" id="${wid}_prog"></div></div><div class="mu-times"><span id="${wid}_cur">0:30</span><span>3:45</span></div></div>
+    <div class="mu-btns"><span class="mu-btn" id="${wid}_prev">⏮</span><span class="mu-play" id="${wid}_play">▶</span><span class="mu-btn" id="${wid}_next">⏭</span></div>
+    <div class="mu-vis" id="${wid}_vis">${Array(12).fill('<div></div>').join('')}</div>
+  </div>`;
+  const cover=body.querySelector(`#${wid}_cover`),title=body.querySelector(`#${wid}_title`),artist=body.querySelector(`#${wid}_artist`),play=body.querySelector(`#${wid}_play`),prog=body.querySelector(`#${wid}_prog`),vis=body.querySelector(`#${wid}_vis`);
+  body.querySelector(`#${wid}_prev`).addEventListener('click',()=>{cur=(cur-1+tracks.length)%tracks.length;updateTrack();});
+  body.querySelector(`#${wid}_next`).addEventListener('click',()=>{cur=(cur+1)%tracks.length;updateTrack();});
+  play.addEventListener('click',()=>{playing=!playing;play.textContent=playing?'⏸':'▶';vis.style.animationPlayState=playing?'running':'paused';if(playing){let p=0;setInterval(()=>{p=(p+1)%100;prog.style.width=p+'%';},300);}});
+  function updateTrack(){const t=tracks[cur];cover.style.background=t.c;title.textContent=t.t;artist.textContent=t.a;}
+  vis.querySelectorAll('div').forEach((d,i)=>d.style.animationDelay=i*0.1+'s');
+}
+
+/* Photos */
+function appPhotos(body,wid){
+  const grads=[
+    'linear-gradient(135deg,#667eea,#764ba2)','linear-gradient(135deg,#f093fb,#f5576c)',
+    'linear-gradient(135deg,#4facfe,#00f2fe)','linear-gradient(135deg,#43e97b,#38f9d7)',
+    'linear-gradient(135deg,#fa709a,#fee140)','linear-gradient(135deg,#a8edea,#fed6e3)',
+    'linear-gradient(135deg,#ff9a9e,#fecfef)','linear-gradient(135deg,#ffecd2,#fcb69f)',
+    'linear-gradient(135deg,#a1c4fd,#c2e9fb)','linear-gradient(135deg,#d4fc79,#96e6a1)',
+    'linear-gradient(135deg,#84fab0,#8fd3f4)','linear-gradient(135deg,#ff6e7f,#bfe9ff)',
+  ];
+  body.innerHTML=`<div class="ph-root"><div class="ph-grid" id="${wid}_grid"></div></div>`;
+  const g=body.querySelector(`#${wid}_grid`);
+  grads.forEach((gd,i)=>{
+    const d=document.createElement('div');d.style.cssText=`aspect-ratio:1;border-radius:8px;background:${gd};cursor:pointer;transition:transform .15s`;
+    d.addEventListener('click',()=>showNotification('Фотографии','Фото #'+(i+1)+' открыто','🖼️'));
+    d.addEventListener('mouseenter',()=>d.style.transform='scale(1.03)');
+    d.addEventListener('mouseleave',()=>d.style.transform='scale(1)');
+    g.appendChild(d);
+  });
+}
+
+/* Weather */
+function appWeather(body,wid){
+  const forecast=[{d:'Сегодня',i:'☀️',t:15},{d:'Завтра',i:'⛅',t:12},{d:'Среда',i:'🌧️',t:9},{d:'Четверг',i:'☁️',t:11},{d:'Пятница',i:'☀️',t:16}];
+  body.innerHTML=`<div class="wt-root">
+    <h2 style="font-weight:300">Москва</h2>
+    <div class="wt-now"><div class="icon">☀️</div><div><div class="temp">+15°</div><div class="muted">Ясно, ощущается +13°</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+      <div style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px"><div class="muted">Влажность</div><div style="font-size:24px">64%</div></div>
+      <div style="background:rgba(255,255,255,.06);border-radius:12px;padding:16px"><div class="muted">Ветер</div><div style="font-size:24px">5 м/с</div></div>
+    </div>
+    <h4 style="margin-bottom:12px">Прогноз на 5 дней</h4>
+    <div class="wt-forecast">
+      ${forecast.map(f=>`<div class="wt-day"><div style="font-weight:600">${f.d}</div><div class="icon">${f.i}</div><div style="font-size:18px">${f.t}°</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* Notes */
+function appNotes(body,wid){
+  body.innerHTML=`<div class="nt-root">
+    <div class="nt-sidebar">
+      <button class="btn btn-accent nt-new" id="${wid}_new">+ Новая</button>
+      <div id="${wid}_list"></div>
+    </div>
+    <div class="nt-main">
+      <input class="nt-title" id="${wid}_title" placeholder="Заголовок">
+      <textarea class="nt-body" id="${wid}_body" placeholder="Текст заметки..."></textarea>
+    </div>
+  </div>`;
+  let notes=JSON.parse(localStorage.getItem('NovaOS_notes')||'[]');
+  let curId=-1;
+  const titleEl=body.querySelector(`#${wid}_title`),bodyEl=body.querySelector(`#${wid}_body`),listEl=body.querySelector(`#${wid}_list`);
+  function renderList(){
+    listEl.innerHTML='';
+    if(notes.length===0){listEl.innerHTML='<div class="muted center" style="padding:16px">Нет заметок</div>';return;}
+    notes.forEach(n=>{
+      const d=document.createElement('div');d.className='nt-list-item'+(n.id===curId?' active':'');
+      d.textContent=n.title||'Без названия';
+      d.addEventListener('click',()=>{curId=n.id;loadNote();renderList();});
+      listEl.appendChild(d);
+    });
+  }
+  function loadNote(){const n=notes.find(x=>x.id===curId);if(n){titleEl.value=n.title;bodyEl.value=n.body;}}
+  function saveCurrent(){const n=notes.find(x=>x.id===curId);if(n){n.title=titleEl.value;n.body=bodyEl.value;localStorage.setItem('NovaOS_notes',JSON.stringify(notes));renderList();}}
+  titleEl.addEventListener('input',saveCurrent);bodyEl.addEventListener('input',saveCurrent);
+  body.querySelector(`#${wid}_new`).addEventListener('click',()=>{const id=Date.now();notes.unshift({id,title:'',body:''});curId=id;localStorage.setItem('NovaOS_notes',JSON.stringify(notes));loadNote();renderList();titleEl.focus();});
+  if(notes.length>0){curId=notes[0].id;loadNote();}
+  renderList();
+}
+
+/* Task Manager */
+function appTaskMgr(body,wid){
+  body.innerHTML=`<div class="tm-root"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><h3>Диспетчер задач</h3><button class="btn" id="${wid}_refresh">Обновить</button></div><table class="tm-table"><thead><tr><th>Приложение</th><th>ОЗУ</th><th>ЦП</th><th>Действие</th></tr></thead><tbody id="${wid}_rows"></tbody></table></div>`;
+  function render(){
+    const rows=body.querySelector(`#${wid}_rows`);rows.innerHTML='';
+    Object.values(OS.windows).forEach(w=>{
+      const tr=document.createElement('tr');
+      const ram=Math.floor(Math.random()*200+50),cpu=Math.floor(Math.random()*20+1);
+      tr.innerHTML=`<td>${APPS.find(a=>a.id===w.appId)?.name||'?'}</td><td>${ram} МБ</td><td>${cpu}%</td><td><span class="tm-kill">Завершить</span></td>`;
+      tr.querySelector('.tm-kill').addEventListener('click',()=>{closeWindow(w.id);render();});
+      rows.appendChild(tr);
+    });
+    if(Object.keys(OS.windows).length===0)rows.innerHTML='<tr><td colspan="4" class="muted center">Нет запущенных приложений</td></tr>';
+  }
+  render();
+  body.querySelector(`#${wid}_refresh`).addEventListener('click',render);
+}
+
+/* Paint */
+function appPaint(body,wid){
+  body.innerHTML=`<div class="pt-root">
+    <div class="pt-toolbar">
+      <button class="btn" id="${wid}_brush">🖌️ Кисть</button>
+      <button class="btn" id="${wid}_eraser">🧽 Ластик</button>
+      <input type="color" value="#0a84ff" id="${wid}_color" style="width:40px;height:32px;border:none;border-radius:6px;cursor:pointer;background:none">
+      <input type="range" min="1" max="40" value="5" id="${wid}_size" style="width:120px">
+      <span class="muted" id="${wid}_sizeval">5px</span>
+      <button class="btn btn-danger" id="${wid}_clear">Очистить</button>
+    </div>
+    <div class="pt-canvas-wrap"><canvas class="pt-canvas" id="${wid}_canvas"></canvas></div>
+  </div>`;
+  const canvas=body.querySelector(`#${wid}_canvas`),ctx=canvas.getContext('2d');
+  let tool='brush',color='#0a84ff',size=5,drawing=false;
+  function resize(){const r=canvas.parentElement.getBoundingClientRect();canvas.width=r.width;canvas.height=r.height;ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);}
+  setTimeout(resize,100);window.addEventListener('resize',resize);
+  body.querySelector(`#${wid}_brush`).addEventListener('click',()=>tool='brush');
+  body.querySelector(`#${wid}_eraser`).addEventListener('click',()=>tool='eraser');
+  body.querySelector(`#${wid}_color`).addEventListener('input',e=>color=e.target.value);
+  body.querySelector(`#${wid}_size`).addEventListener('input',e=>{size=parseInt(e.target.value);body.querySelector(`#${wid}_sizeval`).textContent=size+'px';});
+  body.querySelector(`#${wid}_clear`).addEventListener('click',()=>{ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);});
+  canvas.addEventListener('mousedown',e=>{drawing=true;draw(e);});
+  canvas.addEventListener('mousemove',e=>{if(drawing)draw(e);});
+  canvas.addEventListener('mouseup',()=>drawing=false);canvas.addEventListener('mouseleave',()=>drawing=false);
+  function draw(e){const r=canvas.getBoundingClientRect();const x=e.clientX-r.left,y=e.clientY-r.top;ctx.beginPath();ctx.arc(x,y,size/2,0,Math.PI*2);ctx.fillStyle=tool==='eraser'?'#fff':color;ctx.fill();}
+}
+
+/* Settings */
+function appSettings(body,wid){
+  const sections=['Система','Персонализация','Приложения','Время и язык','Сеть','Звук','Уведомления','Конфиденциальность','Обновление','Мышь','Память','Данные','О системе'];
+  const icons=['💻','🎨','📦','🕐','📶','🔊','🔔','🔒','🔄','🖱️','💾','📁','ℹ️'];
+  body.innerHTML=`<div class="st-root"><div class="st-sidebar" id="${wid}_sb"></div><div class="st-main" id="${wid}_main"></div></div>`;
+  const sb=body.querySelector(`#${wid}_sb`),main=body.querySelector(`#${wid}_main`);
+  sections.forEach((s,i)=>{
+    const d=document.createElement('div');d.className='st-sb-item'+(i===0?' active':'');d.dataset.idx=i;
+    d.innerHTML=`${icons[i]} ${s}`;d.addEventListener('click',()=>{sb.querySelectorAll('.st-sb-item').forEach(x=>x.classList.remove('active'));d.classList.add('active');render(i);});
+    sb.appendChild(d);
+  });
+  const accents=['#0a84ff','#bf5af2','#ff375f','#ff9f0a','#30d158','#64d2ff','#5e5ce6','#ac8e68','#f87171','#fbbf24'];
+  const wps=[
+    'https://images.unsplash.com/photo-1451177559227-676f22e9883b?w=1920&q=80',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3da?w=1920&q=80',
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80',
+    'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?w=1920&q=80',
+    'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1920&q=80',
+    'https://images.unsplash.com/photo-1455218876972-8b19e6c6c7c4?w=1920&q=80',
+    'https://images.unsplash.com/photo-1472214103451-9374bd1c7986?w=1920&q=80',
+    'https://images.unsplash.com/photo-1447752875215-b2761d3d530c?w=1920&q=80'
+  ];
+  function render(idx){
+    const s=sections[idx];
+    if(s==='Система')main.innerHTML=`<h3 style="margin-bottom:16px">Система</h3>
+      <div class="st-row"><span class="st-label">Имя устройства</span><span>NovaOS-PC</span></div>
+      <div class="st-row"><span class="st-label">Версия ОС</span><span>NovaOS ${OS.version}</span></div>
+      <div class="st-row"><span class="st-label">Сборка</span><span>${OS.build}</span></div>
+      <div class="st-row"><span class="st-label">Перезагрузить</span><button class="btn" onclick="powerRestart()">Перезагрузка</button></div>`;
+    else if(s==='Персонализация')main.innerHTML=`<h3 style="margin-bottom:16px">Персонализация</h3>
+      <div class="st-row"><span class="st-label">Тема</span><div style="display:flex;gap:8px"><button class="btn" id="${wid}_dark">Тёмная</button><button class="btn" id="${wid}_light">Светлая</button></div></div>
+      <div class="st-row"><span class="st-label">Цвет акцента</span><div class="st-color-pick" id="${wid}_accents"></div></div>
+      <div class="st-row" style="flex-direction:column;align-items:flex-start;gap:8px"><span class="st-label">Обои</span><div class="st-wp-pick" id="${wid}_wps"></div></div>
+      <div class="st-row"><span class="st-label">Размер иконок</span><select class="input" id="${wid}_iconsz"><option value="small">Маленькие</option><option value="normal" selected>Средние</option><option value="large">Большие</option></select></div>
+      <div class="st-row"><span class="st-label">Анимации</span><div class="toggle on" id="${wid}_anim"><div class="knob"></div></div></div>`;
+    else if(s==='Приложения')main.innerHTML=`<h3 style="margin-bottom:16px">Приложения</h3>${APPS.map(a=>`<div class="st-row"><span class="st-label">${a.icon} ${a.name}</span><div class="toggle on"><div class="knob"></div></div></div>`).join('')}`;
+    else if(s==='Время и язык')main.innerHTML=`<h3 style="margin-bottom:16px">Время и язык</h3>
+      <div class="st-row"><span class="st-label">Формат времени</span><select class="input" id="${wid}_tf"><option value="24" selected>24-часовой</option><option value="12">12-часовой</option></select></div>
+      <div class="st-row"><span class="st-label">Показывать секунды</span><div class="toggle on" id="${wid}_sec"><div class="knob"></div></div></div>
+      <div class="st-row"><span class="st-label">Язык</span><span>Русский</span></div>`;
+    else if(s==='Сеть')main.innerHTML=`<h3 style="margin-bottom:16px">Сеть</h3>
+      <div class="st-row"><span class="st-label">📶 Wi-Fi</span><div class="toggle on" id="${wid}_netwifi"><div class="knob"></div></div></div>
+      <div class="st-row"><span class="st-label">🔵 Bluetooth</span><div class="toggle" id="${wid}_netbt"><div class="knob"></div></div></div>
+      <div class="st-row"><span class="st-label">Подключение</span><span class="muted">NovaOS_Network</span></div>`;
+    else if(s==='Звук')main.innerHTML=`<h3 style="margin-bottom:16px">Звук</h3>
+      <div class="st-row" style="flex-direction:column;align-items:flex-start;gap:8px"><span class="st-label">Громкость (${OS.volume}%)</span><input type="range" min="0" max="100" value="${OS.volume}" class="w-full" id="${wid}_vol"></div>`;
+    else if(s==='Уведомления')main.innerHTML=`<h3 style="margin-bottom:16px">Уведомления</h3>
+      <div class="st-row"><span class="st-label">Показывать баннеры</span><div class="toggle on" id="${wid}_notif"><div class="knob"></div></div></div>
+      <div class="st-row"><span class="st-label">Звук уведомлений</span><div class="toggle on" id="${wid}_notifsnd"><div class="knob"></div></div></div>`;
+    else if(s==='Конфиденциальность')main.innerHTML=`<h3 style="margin-bottom:16px">Конфиденциальность</h3>
+      <div class="st-row"><span class="st-label">📷 Доступ к камере</span><div class="toggle on" id="${wid}_cam"><div class="knob"></div></div></div>
+      <div class="st-row"><span class="st-label">🎤 Доступ к микрофону</span><div class="toggle on" id="${wid}_mic"><div class="knob"></div></div></div>`;
+    else if(s==='Обновление')main.innerHTML=`<h3 style="margin-bottom:16px">Обновление</h3>
+      <div class="st-row"><span class="st-label">Текущая версия</span><span>${OS.version}</span></div>
+      <div class="st-row"><span class="st-label">Проверить обновления</span><button class="btn btn-accent" id="${wid}_updchk">Проверить</button></div>
+      <div id="${wid}_updinfo" style="margin-top:12px"></div>`;
+    else if(s==='Мышь')main.innerHTML=`<h3 style="margin-bottom:16px">Мышь</h3>
+      <div class="st-row"><span class="st-label">Скорость</span><input type="range" min="1" max="10" value="5" id="${wid}_mouse"></div>
+      <div class="st-row"><span class="st-label">Основная кнопка</span><select class="input"><option>Левая</option><option>Правая</option></select></div>`;
+    else if(s==='Память')main.innerHTML=`<h3 style="margin-bottom:16px">Память</h3>
+      <div class="st-row"><span class="st-label">Диск C:</span><span class="muted">128 ГБ / 256 ГБ</span></div>
+      <div class="st-row"><span class="st-label">Диск D:</span><span class="muted">512 ГБ / 1 ТБ</span></div>
+      <div style="width:100%;height:20px;background:rgba(255,255,255,.1);border-radius:10px;margin:8px 0;overflow:hidden"><div style="width:50%;height:100%;background:var(--accent)"></div></div>
+      <button class="btn" id="${wid}_clean">Очистить</button>`;
+    else if(s==='Данные')main.innerHTML=`<h3 style="margin-bottom:16px">Данные</h3>
+      <div style="display:flex;gap:8px;margin-bottom:16px"><button class="btn" id="${wid}_export">Экспорт JSON</button><button class="btn" id="${wid}_import">Импорт JSON</button></div>
+      <button class="btn btn-danger" id="${wid}_reset">Сбросить все данные</button>`;
+    else if(s==='О системе')main.innerHTML=`<div class="ab-root"><div class="ab-logo"><div></div><div></div><div></div><div></div></div><div class="ab-name">NovaOS</div><div class="ab-ver">Версия ${OS.version} · Сборка ${OS.build}</div><div class="ab-info">Год: 2026<br>Автор: NovaDev<br>Технологии: HTML5, CSS3, Vanilla JS<br>Лицензия: PROPRIETARY · All Rights Reserved<br>Copyright: © 2026 NovaDev</div><div class="ab-rights">Все права защищены</div></div>`;
+
+    // Apply handlers
+    const dark=body.querySelector(`#${wid}_dark`),light=body.querySelector(`#${wid}_light`);
+    if(dark)dark.addEventListener('click',()=>{OS.settings.theme='dark';applySettings();showNotification('Тема','Тёмная тема','🌙');});
+    if(light)light.addEventListener('click',()=>{OS.settings.theme='light';applySettings();showNotification('Тема','Светлая тема','☀️');});
+    const ac=body.querySelector(`#${wid}_accents`);
+    if(ac)accents.forEach(c=>{const s=document.createElement('div');s.className='st-color-swatch'+(c===OS.settings.accent?' active':'');s.style.background=c;s.addEventListener('click',()=>{OS.settings.accent=c;applySettings();ac.querySelectorAll('.st-color-swatch').forEach(x=>x.classList.remove('active'));s.classList.add('active');});ac.appendChild(s);});
+    const wpEl=body.querySelector(`#${wid}_wps`);
+    if(wpEl)wps.forEach((w,i)=>{const d=document.createElement('div');d.className='st-wp'+(i===OS.settings.wallpaper?' active':'');d.style.backgroundImage=`url('${w}')`;d.style.backgroundSize='cover';d.addEventListener('click',()=>{OS.settings.wallpaper=i;applySettings();wpEl.querySelectorAll('.st-wp').forEach(x=>x.classList.remove('active'));d.classList.add('active');});wpEl.appendChild(d);});
+    const isz=body.querySelector(`#${wid}_iconsz`);
+    if(isz)isz.value=OS.settings.iconsize,isz.addEventListener('change',e=>{OS.settings.iconsize=e.target.value;applySettings();renderDesktopIcons();});
+    body.querySelectorAll('.toggle').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+    const tf=body.querySelector(`#${wid}_tf`);
+    if(tf)tf.value=OS.settings.timeformat,tf.addEventListener('change',e=>{OS.settings.timeformat=parseInt(e.target.value);saveSettings();updateTime();});
+    const sec=body.querySelector(`#${wid}_sec`);
+    if(sec)sec.classList.toggle('on',OS.settings.seconds),sec.addEventListener('click',()=>{OS.settings.seconds=!OS.settings.seconds;saveSettings();updateTime();});
+    const vol=body.querySelector(`#${wid}_vol`);
+    if(vol)vol.addEventListener('input',e=>{OS.volume=parseInt(e.target.value);document.getElementById('vol-fill').style.width=OS.volume+'%';document.getElementById('vol-handle').style.left=OS.volume+'%';});
+    const updc=body.querySelector(`#${wid}_updchk`);
+    if(updc)updc.addEventListener('click',()=>{updc.textContent='Проверка...';updc.disabled=true;setTimeout(()=>{body.querySelector(`#${wid}_updinfo`).innerHTML='<div style="padding:12px;background:rgba(48,209,88,.1);border-radius:8px;color:#30d158">✓ Установлена последняя версия '+OS.version+'</div>';updc.textContent='Проверить';updc.disabled=false;},2000);});
+    const exp=body.querySelector(`#${wid}_export`);
+    if(exp)exp.addEventListener('click',()=>{const data={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('NovaOS'))data[k]=localStorage.getItem(k);}const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='novaos_backup.json';a.click();showNotification('Данные','Экспорт выполнен','💾');});
+    const imp=body.querySelector(`#${wid}_import`);
+    if(imp)imp.addEventListener('click',()=>{const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);Object.entries(d).forEach(([k,v])=>localStorage.setItem(k,v));showNotification('Данные','Импорт выполнен','✅');loadSettings();applySettings();render(idx);}catch(e){showNotification('Ошибка','Неверный файл','⚠️');}};r.readAsText(f);});inp.click();});
+    const reset=body.querySelector(`#${wid}_reset`);
+    if(reset)reset.addEventListener('click',()=>{if(confirm('Сбросить все данные? Это действие необратимо.')){localStorage.clear();location.reload();}});
+    const clean=body.querySelector(`#${wid}_clean`);
+    if(clean)clean.addEventListener('click',()=>{showNotification('Очистка','Временные файлы удалены','🧹');});
+  }
+  render(0);
+}
+
+/* About */
+function appAbout(body,wid){
+  body.innerHTML=`<div class="ab-root">
+    <div class="ab-logo"><div></div><div></div><div></div><div></div></div>
+    <div class="ab-name">NovaOS</div>
+    <div class="ab-ver">Версия ${OS.version} · Сборка ${OS.build}</div>
+    <div class="ab-info">
+      Год: ${OS.year}<br>
+      Автор: ${OS.author}<br>
+      Технологии: HTML5, CSS3, Vanilla JS<br>
+      Приложений: ${APPS.length}<br>
+      Лицензия: PROPRIETARY · All Rights Reserved<br>
+      Copyright: © 2026 ${OS.author}
+    </div>
+    <div class="ab-rights">Все права защищены</div>
+  </div>`;
+}
+
+/* ═════════════ GAMES ═════════════ */
+function appGames(body,wid){
+  const games=['Сапёр','Змейка','2048','Память','Крестики-нолики'];
+  const gicons=['💣','🐍','🔢','🃏','⭕'];
+  body.innerHTML=`<div style="display:flex;flex-direction:column;height:100%">
+    <div class="gm-tabs" id="${wid}_tabs">${games.map((g,i)=>`<div class="gm-tab${i===0?' active':''}" data-g="${i}">${gicons[i]} ${g}</div>`).join('')}</div>
+    <div style="flex:1;overflow-y:auto;padding:16px" id="${wid}_content"></div>
+  </div>`;
+  body.querySelectorAll('.gm-tab').forEach(t=>t.addEventListener('click',()=>{body.querySelectorAll('.gm-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');renderGame(parseInt(t.dataset.g));}));
+  const content=body.querySelector(`#${wid}_content`);
+  function renderGame(idx){
+    if(idx===0)gameMinesweeper();
+    else if(idx===1)gameSnake();
+    else if(idx===2)game2048();
+    else if(idx===3)gameMemory();
+    else if(idx===4)gameTicTacToe();
+  }
+  function gameMinesweeper(){
+    const N=9,MINES=10;
+    let grid=[],revealed=[],flags=[],over=false,won=false;
+    function init(){grid=[];revealed=[];flags=[];over=false;won=false;
+      for(let r=0;r<N;r++){grid[r]=[];revealed[r]=[];flags[r]=[];for(let c=0;c<N;c++){grid[r][c]=0;revealed[r][c]=false;flags[r][c]=false;}}
+      let placed=0;while(placed<MINES){const r=Math.floor(Math.random()*N),c=Math.floor(Math.random()*N);if(grid[r][c]!==-1){grid[r][c]=-1;placed++;}}
+      for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(grid[r][c]===-1)continue;let cnt=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<N&&nc>=0&&nc<N&&grid[nr][nc]===-1)cnt++;}grid[r][c]=cnt;}
+      render();
+    }
+    function reveal(r,c){
+      if(over||revealed[r][c]||flags[r][c])return;
+      revealed[r][c]=true;
+      if(grid[r][c]===-1){over=true;render();return;}
+      if(grid[r][c]===0)for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<N&&nc>=0&&nc<N&&!revealed[nr][nc])reveal(nr,nc);}
+      checkWin();render();
+    }
+    function checkWin(){let unrevealed=0;for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!revealed[r][c])unrevealed++;if(unrevealed===MINES){won=true;over=true;}}
+    function render(){
+      let html='<div style="text-align:center"><h4>💣 Сапёр</h4><div style="display:inline-block;border:2px solid var(--border);border-radius:8px;padding:4px">';
+      for(let r=0;r<N;r++){html+='<div style="display:flex">';
+        for(let c=0;c<N;c++){
+          const cell=revealed[r][c]?(grid[r][c]===-1?'💣':grid[r][c]||''):flags[r][c]?'🚩':'';
+          const bg=revealed[r][c]?(grid[r][c]===-1?'#e81123':'rgba(255,255,255,.1)'):'rgba(255,255,255,.05)';
+          const col=grid[r][c]===1?'#4facfe':grid[r][c]===2?'#30d158':grid[r][c]===3?'#ff9f0a':'';
+          html+=`<div data-r="${r}" data-c="${c}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:${bg};border:1px solid var(--border);cursor:pointer;font-size:16px;color:${col};border-radius:2px">${cell}</div>`;
+        }
+        html+='</div>';
+      }
+      html+='</div><div style="margin-top:8px">'+(won?'<span style="color:#30d158;font-weight:600">🎉 Победа!</span>':over?'<span style="color:#e81123">💥 Поражение</span>':'Флагов: '+Object.values(flags).flat().filter(f=>f).length+'/'+MINES)+'</div>';
+      html+='<button class="btn btn-accent mt-8" id="'+wid+'_ms_new">Новая игра</button></div>';
+      content.innerHTML=html;
+      content.querySelectorAll('[data-r]').forEach(d=>{d.addEventListener('click',()=>reveal(parseInt(d.dataset.r),parseInt(d.dataset.c)));d.addEventListener('contextmenu',e=>{e.preventDefault();if(!revealed[parseInt(d.dataset.r)][parseInt(d.dataset.c)]){flags[parseInt(d.dataset.r)][parseInt(d.dataset.c)]=!flags[parseInt(d.dataset.r)][parseInt(d.dataset.c)];render();}});});
+      content.querySelector(`#${wid}_ms_new`).addEventListener('click',init);
+    }
+    init();
+  }
+  function gameSnake(){
+    content.innerHTML=`<div style="text-align:center"><h4>🐍 Змейка</h4><canvas id="${wid}_snake" width="360" height="360" style="border:2px solid var(--border);border-radius:8px;background:#111"></canvas><div style="margin-top:8px">Счёт: <span id="${wid}_snake_score">0</span> · <span class="muted">Стрелки для управления</span></div></div>`;
+    const cv=content.querySelector(`#${wid}_snake`),ctx=cv.getContext('2d');
+    const S=18,cells=20;let snake=[{x:10,y:10}],dir={x:1,y:0},food={x:5,y:5},score=0,over=false,interval=null;
+    function tick(){
+      if(over)return;
+      const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+      if(h.x<0||h.x>=cells||h.y<0||h.y>=cells||snake.some(s=>s.x===h.x&&s.y===h.y)){over=true;ctx.fillStyle='#e81123';ctx.font='24px sans-serif';ctx.textAlign='center';ctx.fillText('Game Over',180,180);clearInterval(interval);return;}
+      snake.unshift(h);
+      if(h.x===food.x&&h.y===food.y){score+=10;content.querySelector(`#${wid}_snake_score`).textContent=score;food={x:Math.floor(Math.random()*cells),y:Math.floor(Math.random()*cells)};}
+      else snake.pop();
+      ctx.fillStyle='#111';ctx.fillRect(0,0,360,360);
+      ctx.fillStyle='#0a84ff';snake.forEach(s=>ctx.fillRect(s.x*S,s.y*S,S-1,S-1));
+      ctx.fillStyle='#30d158';ctx.fillRect(food.x*S,food.y*S,S-1,S-1);
+    }
+    function start(){snake=[{x:10,y:10}];dir={x:1,y:0};score=0;over=false;content.querySelector(`#${wid}_snake_score`).textContent=0;clearInterval(interval);interval=setInterval(tick,120);}
+    const keyHandler=e=>{
+      const w=OS.windows[wid];if(!w||w.minimized)return;
+      if(e.key==='ArrowUp'&&dir.y===0)dir={x:0,y:-1};
+      else if(e.key==='ArrowDown'&&dir.y===0)dir={x:0,y:1};
+      else if(e.key==='ArrowLeft'&&dir.x===0)dir={x:-1,y:0};
+      else if(e.key==='ArrowRight'&&dir.x===0)dir={x:1,y:0};
+    };
+    document.addEventListener('keydown',keyHandler);
+    content.innerHTML+=`<button class="btn btn-accent mt-8" id="${wid}_snake_start">Старт/Рестарт</button>`;
+    content.querySelector(`#${wid}_snake_start`).addEventListener('click',start);
+    start();
+  }
+  function game2048(){
+    let board=[],score=0;
+    function init(){board=[];for(let r=0;r<4;r++){board[r]=[0,0,0,0];}addTile();addTile();score=0;render();}
+    function addTile(){const empty=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(board[r][c]===0)empty.push([r,c]);if(empty.length===0)return;const[r,c]=empty[Math.floor(Math.random()*empty.length)];board[r][c]=Math.random()<0.9?2:4;}
+    function slide(row){let arr=row.filter(x=>x);for(let i=0;i<arr.length-1;i++)if(arr[i]===arr[i+1]){arr[i]*=2;arr[i+1]=0;score+=arr[i];}arr=arr.filter(x=>x);while(arr.length<4)arr.push(0);return arr;}
+    function move(dir){
+      let moved=false;
+      if(dir==='left'){for(let r=0;r<4;r++){const nr=slide(board[r]);if(JSON.stringify(nr)!==JSON.stringify(board[r]))moved=true;board[r]=nr;}}
+      else if(dir==='right'){for(let r=0;r<4;r++){const nr=slide(board[r].reverse()).reverse();if(JSON.stringify(nr)!==JSON.stringify(board[r]))moved=true;board[r]=nr;}}
+      else if(dir==='up'){for(let c=0;c<4;c++){const col=[board[0][c],board[1][c],board[2][c],board[3][c]];const nc=slide(col);if(JSON.stringify(nc)!==JSON.stringify(col))moved=true;for(let r=0;r<4;r++)board[r][c]=nc[r];}}
+      else if(dir==='down'){for(let c=0;c<4;c++){const col=[board[3][c],board[2][c],board[1][c],board[0][c]];const nc=slide(col);if(JSON.stringify(nc)!==JSON.stringify(col))moved=true;for(let r=0;r<4;r++)board[r][c]=nc[3-r];}}
+      if(moved){addTile();render();}
+    }
+    function render(){
+      const colors={0:'rgba(255,255,255,.05)',2:'#eee4da',4:'#ede0c8',8:'#f2b179',16:'#f59563',32:'#f67c5f',64:'#f65e3b',128:'#edcf72',256:'#edcc61',512:'#edc850',1024:'#edc53f',2048:'#edc22e'};
+      let html='<div style="text-align:center"><h4>🔢 2048</h4><div style="display:inline-grid;grid-template-columns:repeat(4,72px);gap:6px;background:rgba(255,255,255,.05);padding:6px;border-radius:8px">';
+      for(let r=0;r<4;r++)for(let c=0;c<4;c++){const v=board[r][c];html+=`<div style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;border-radius:6px;background:${colors[v]||'#edc22e'};color:${v>4?'#fff':'#776e65'}">${v||''}</div>`;}
+      html+='</div><div style="margin-top:8px">Счёт: <span style="font-weight:700">'+score+'</span> · <span class="muted">Стрелки</span></div>';
+      html+=`<button class="btn btn-accent mt-8" id="${wid}_2048_new">Новая игра</button></div>`;
+      content.innerHTML=html;
+      content.querySelector(`#${wid}_2048_new`).addEventListener('click',init);
+    }
+    const keyHandler=e=>{
+      const w=OS.windows[wid];if(!w||w.minimized)return;
+      if(e.key==='ArrowLeft')move('left');
+      else if(e.key==='ArrowRight')move('right');
+      else if(e.key==='ArrowUp')move('up');
+      else if(e.key==='ArrowDown')move('down');
+    };
+    document.addEventListener('keydown',keyHandler);
+    init();
+  }
+  function gameMemory(){
+    const emojis=['🎮','🎵','🎨','🍕','🚀','⭐','🐱','🌈'];
+    let cards=[],flipped=[],matched=[],moves=0,startT=Date.now();
+    function init(){cards=[...emojis,...emojis].sort(()=>Math.random()-0.5);flipped=[];matched=[];moves=0;startT=Date.now();render();}
+    function flip(i){
+      if(flipped.length===2||flipped.includes(i)||matched.includes(i))return;
+      flipped.push(i);
+      if(flipped.length===2){moves++;const[a,b]=flipped;if(cards[a]===cards[b]){matched.push(a,b);}flipped=[];setTimeout(render,300);}else render();
+    }
+    function render(){
+      let won=matched.length===cards.length;
+      let html='<div style="text-align:center"><h4>🃏 Память</h4>';
+      html+='<div style="display:grid;grid-template-columns:repeat(4,64px);gap:8px;justify-content:center;margin:12px 0">';
+      cards.forEach((c,i)=>{
+        const show=flipped.includes(i)||matched.includes(i);
+        const bg=matched.includes(i)?'rgba(48,209,88,.2)':'rgba(255,255,255,.08)';
+        html+=`<div data-i="${i}" style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:28px;border-radius:8px;background:${show?bg:'var(--accent)'};cursor:pointer;transition:transform .15s;${show?'':'color:transparent'}">${show?c:'?'}</div>`;
+      });
+      html+='</div><div>Ходы: '+moves+' · Время: '+Math.floor((Date.now()-startT)/1000)+'с</div>';
+      if(won)html+='<div style="color:#30d158;font-weight:600;margin-top:8px">🎉 Победа за '+moves+' ходов!</div>';
+      html+=`<button class="btn btn-accent mt-8" id="${wid}_mem_new">Заново</button></div>`;
+      content.innerHTML=html;
+      content.querySelectorAll('[data-i]').forEach(d=>d.addEventListener('click',()=>flip(parseInt(d.dataset.i))));
+      content.querySelector(`#${wid}_mem_new`).addEventListener('click',init);
+    }
+    init();
+  }
+  function gameTicTacToe(){
+    let board=['','','','','','','','',''],player='⭕',ai='❌',over=false;
+    function checkWin(b,p){const w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];return w.some(x=>x.every(i=>b[i]===p));}
+    function bestMove(b,p){for(let i=0;i<9;i++)if(b[i]===''){b[i]=p;if(checkWin(b,p)){b[i]='';return i;}b[i]='';}for(let i=0;i<9;i++)if(b[i]===''){b[i]=p==='❌'?'⭕':'❌';if(checkWin(b,p==='❌'?'⭕':'❌')){b[i]='';return i;}b[i]='';}if(b[4]==='')return 4;const corners=[0,2,6,8].filter(i=>b[i]==='');if(corners.length)return corners[0];const edges=[1,3,5,7].filter(i=>b[i]==='');if(edges.length)return edges[0];for(let i=0;i<9;i++)if(b[i]=='')return i;}
+    function render(){
+      let won=checkWin(board,player),lost=checkWin(board,ai),draw=!board.includes('')&&!won&&!lost;
+      let html='<div style="text-align:center"><h4>⭕ Крестики-нолики</h4><div style="display:inline-grid;grid-template-columns:repeat(3,80px);gap:4px;margin:12px 0">';
+      board.forEach((c,i)=>{
+        const bg=c? 'rgba(255,255,255,.1)':'rgba(255,255,255,.05)';
+        html+=`<div data-i="${i}" style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:36px;border-radius:8px;background:${bg};cursor:pointer;${c||over?'pointer-events:none':''}">${c}</div>`;
+      });
+      html+='</div><div style="margin-top:8px">';
+      if(won)html+='<span style="color:#30d158;font-weight:600">🎉 Вы победили!</span>';
+      else if(lost)html+='<span style="color:#e81123">Вы проиграли</span>';
+      else if(draw)html+='<span class="muted">Ничья</span>';
+      else html+='<span class="muted">Вы — ⭕, ИИ — ❌</span>';
+      html+=`</div><button class="btn btn-accent mt-8" id="${wid}_ttt_new">Новая игра</button></div>`;
+      content.innerHTML=html;
+      content.querySelectorAll('[data-i]').forEach(d=>d.addEventListener('click',()=>{
+        if(over||board[parseInt(d.dataset.i)])return;
+        board[parseInt(d.dataset.i)]=player;
+        if(checkWin(board,player)){over=true;render();return;}
+        if(!board.includes('')){over=true;render();return;}
+        const m=bestMove(board,ai);board[m]=ai;
+        if(checkWin(board,ai)||!board.includes(''))over=true;
+        render();
+      }));
+      content.querySelector(`#${wid}_ttt_new`).addEventListener('click',()=>{board=['','','','','','','','',''];over=false;render();});
+    }
+    render();
+  }
+  renderGame(0);
+}
+
+/* ── Init ── */
+bootSequence();
+</script>
+</body>
+</html>
