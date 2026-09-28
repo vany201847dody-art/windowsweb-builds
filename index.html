@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Windows 11 Web — все сборки ИИ</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;background:linear-gradient(140deg,#0f1b2d 0%,#15243c 45%,#0d1626 100%);color:#e8ecf4;min-height:100vh}
+  header{padding:34px 22px 18px;text-align:center}
+  header h1{font-size:26px;font-weight:600;letter-spacing:.2px}
+  header p{color:#9fb3c9;font-size:14px;margin-top:6px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding:18px 22px 30px;max-width:1180px;margin:0 auto}
+  .card{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;backdrop-filter:blur(6px)}
+  .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px}
+  .b-ok{background:#1b7f3a;color:#d8ffe6}
+  .b-wip{background:#8a5a00;color:#ffe9c4}
+  .b-bad{background:#a0242e;color:#ffe0e0}
+  .fname{font-family:Consolas,monospace;font-size:13.5px;word-break:break-all;font-weight:600}
+  .stats{font-size:12px;color:#9fb3c9}
+  .note{font-size:12.5px;line-height:1.5;color:#cdd8e6;background:rgba(255,255,255,.04);border-left:3px solid rgba(255,255,255,.18);padding:8px 10px;border-radius:0 8px 8px 0}
+  .btns{display:flex;gap:8px;margin-top:2px}
+  button{font:inherit;font-size:13px;font-weight:600;border:0;border-radius:9px;padding:9px 12px;cursor:pointer}
+  .try{background:#2f7fe0;color:#fff;flex:1}
+  .try:hover{background:#3b8df2}
+  .code{background:rgba(255,255,255,.1);color:#dfe7f0}
+  .code:hover{background:rgba(255,255,255,.16)}
+  a{text-decoration:none;color:inherit}
+  #ov{position:fixed;inset:0;background:rgba(4,10,20,.78);display:none;z-index:50;flex-direction:column;padding:12px}
+  #ov.on{display:flex}
+  #ovbar{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 12px;margin-bottom:10px;flex-shrink:0}
+  #ovbar b{font-size:14px}
+  #ovbar .sp{flex:1}
+  #ovbar a{font-size:12px;color:#9fc4ff}
+  #close{background:#a0242e;color:#fff}
+  #cv{flex:1;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:#000}
+  footer{padding:8px 22px 26px;text-align:center;color:#7f92a8;font-size:12px;line-height:1.6}
+  footer code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🪟 Windows 11 Web — все сборки от ИИ</h1>
+  <p>Выберите сборку и «потыкайте» её прямо здесь — каждая открывается в безопасной песочнице. Код любой сборки виден и копируется из репозитория.</p>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div id="ov">
+  <div id="ovbar">
+    <b id="ovName">—</b>
+    <span class="sp"></span>
+    <a id="ovLink" href="#" target="_blank" rel="noopener noreferrer">открыть в новой вкладке ↗</a>
+    <button id="close">✕ закрыть</button>
+  </div>
+  <iframe id="cv" sandbox="allow-scripts allow-forms" title="preview"></iframe>
+</div>
+
+<footer>
+  <b>Защита просмотра:</b> неудачные сборки грузятся в песочницу (sandbox-iframe): они не смогут открыть попапы поверх сайта,
+  заморозить страницу alert-ами, перейти по top-навигации или испортить галерею. Итоговая сборка открывается с полным доступом.
+  Живая ОС — на отдельном сайте <code>windowsweb</code>.
+</footer>
+
+<script>
+const BUILDS=[];
+function add(b){BUILDS.push(b)}
+add({file:'vssesuperbild.html', name:'Итоговая сборка', st:'ok',
+ badge:'✅ итоговая',
+ note:'Финальная рабочая ОС: Пуск, панель задач, Проводник, «Этот компьютер», Банк, QR, Диктофон, Заметки, 5 игр, мировые часы. Хостится на отдельном сайте.'})
+add({file:'DEEPSEEK.html', name:'DeepSeek — источник приложений', st:'wip',
+ badge:'🟡 рабочий',
+ note:'Отсюда портированы Банк/QR/Диктофон/Заметки/Игры/Мировые часы. Сама по себе сырая: эмодзи вместо иконок, нет доработок оболочки, поиск и «пуск» местами не доделаны.'})
+add({file:'deepseek.html', name:'DeepSeek — ранняя', st:'bad',
+ badge:'🔴 неудачная',
+ note:'Более старая версия той же ветки: окна съезжают, панель задач и часть приложений не работают, много мусорного кода. Оставлена для истории.'})
+add({file:'алиса аи.html', name:'Алиса АИ — ранний концепт', st:'bad',
+ badge:'🔴 неудачная',
+ note:'Другая архитектура: системные окна почти не работают, Пуск и рабочий стол не собраны. Сохранена как источник идей.'})
+add({file:'gigschat.html', name:'Gigachat — эксперимент', st:'bad',
+ badge:'🔴 неудачная',
+ note:'Только базовые окна, оболочки нет: Пуск, панель задач и рабочий стол не реализованы. Мелкая заготовка для проверки.'})
+
+const REPO='https://github.com/vany201847dody-art/windowsweb-builds';
+const grid=document.getElementById('grid');
+const ov=document.getElementById('ov');
+const cv=document.getElementById('cv');
+const ovName=document.getElementById('ovName');
+const ovLink=document.getElementById('ovLink');
+
+function render(){
+  grid.innerHTML=BUILDS.map(b=>`
+   <div class="card">
+     <div class="top">
+       <span class="badge b-${b.st}">${b.badge}</span>
+     </div>
+     <div class="fname">${b.file}</div>
+     <div class="stats">${b.name}</div>
+     <div class="note">${b.note}</div>
+     <div class="btns">
+       <button class="try" onclick="openPrev('${b.file}')">🖱️ Потыкать</button>
+       <a class="code" href="${REPO}/blob/main/${b.file}" target="_blank" rel="noopener noreferrer"><button>Код</button></a>
+     </div>
+   </div>`).join('');
+}
+
+function openPrev(file){
+  const b=BUILDS.find(x=>x.file===file);
+  ovName.textContent=file;
+  ovLink.href=file;
+  cv.removeAttribute('sandbox');
+  cv.setAttribute('sandbox', b.st==='ok' ? 'allow-scripts allow-forms allow-same-origin allow-modals'
+                                         : 'allow-scripts allow-forms');
+  cv.src=file;
+  ov.classList.add('on');
+}
+
+document.getElementById('close').addEventListener('click',()=>{
+  ov.classList.remove('on');
+  cv.src='about:blank';
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('close').click(); });
+
+render();
+</script>
+</body>
+</html>
