@@ -21,23 +21,6 @@ a{text-decoration:none;color:inherit}
 .try:hover{background:#3b8df2}
 .code{display:inline-block;background:rgba(255,255,255,.1);color:#dfe7f0;padding:9px 12px;border-radius:9px;font-size:13px;font-weight:600}
 .code:hover{background:rgba(255,255,255,.16)}
-/* --- комментарии --- */
-.cmt{border-top:1px dashed rgba(255,255,255,.14);padding-top:10px;display:flex;flex-direction:column;gap:8px}
-.cmt_head{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#8fa3bb}
-.cmt_list{display:flex;flex-direction:column;gap:6px;max-height:170px;overflow:auto}
-.cmt_empty{font-size:12px;color:#6f829b;font-style:italic}
-.cmt_it{font-size:12px;color:#c7d2e0;background:rgba(255,255,255,.04);border-radius:7px;padding:6px 30px 6px 9px;line-height:1.4;position:relative}
-.cmt_it b,.cprof{color:#93b7ff;font-weight:600;margin-right:6px}
-a.cprof:hover{text-decoration:underline}
-.cmt_del{position:absolute;top:4px;right:4px;background:rgba(160,36,46,.28);color:#ffd7d7;padding:2px 7px;border-radius:6px;font-size:11px}
-.cmt_del:hover{background:rgba(160,36,46,.5)}
-.cmt_it b{color:#93b7ff;font-weight:600;margin-right:6px}
-.cmt_form{display:flex;gap:6px}
-.cmt_in{flex:1;font:inherit;font-size:12.5px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#e8ecf4;outline:none;min-width:0}
-.cmt_in:focus{border-color:#2f7fe0}
-.cmt_send{background:#2f7fe0;color:#fff;padding:8px 12px;flex-shrink:0}
-.cmt_send:hover{background:#3b8df2}
-.cmt_gh{font-size:12px;color:#9fc4ff;align-self:flex-start}
 /* --- оверлей просмотра --- */
 #ov{position:fixed;inset:0;background:rgba(4,10,20,.80);display:none;z-index:50;flex-direction:column;padding:12px}
 #ov.on{display:flex}
@@ -49,9 +32,3 @@ a.cprof:hover{text-decoration:underline}
 #cv{flex:1;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:#000}
 footer{padding:8px 22px 26px;text-align:center;color:#7f92a8;font-size:12px;line-height:1.6}
 footer code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px}
-.who{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;padding:0 22px 8px;font-size:12.5px;color:#9fb3c9}
-.who input{font:inherit;font-size:12.5px;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#e8ecf4;outline:none;max-width:230px}
-.who input:focus{border-color:#2f7fe0}
-.who_ok{background:#2f7fe0;color:#fff;padding:7px 12px}
-.who_ok:hover{background:#3b8df2}
-.who_hint{flex-basis:100%;font-size:11.5px;color:#6f829b}
