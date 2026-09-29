@@ -5,6 +5,9 @@ header{padding:34px 22px 18px;text-align:center}
 header h1{font-size:26px;font-weight:600;letter-spacing:.2px}
 header p{color:#9fb3c9;font-size:14px;margin-top:6px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;padding:18px 22px 30px;max-width:1220px;margin:0 auto}
+.sec h2{grid-column:1/-1;font-size:15px;color:#cfe0f2;padding:14px 4px 0;letter-spacing:.3px;display:flex;align-items:center;gap:10px}
+.sec h2:after{content:'';height:1px;flex:1;background:rgba(255,255,255,.12)}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;padding:10px 0 4px}
 .card{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;backdrop-filter:blur(6px)}
 .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px}
