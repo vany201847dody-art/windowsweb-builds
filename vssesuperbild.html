@@ -224,10 +224,15 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .tbtns button.cl:hover{background:#c42b1c;color:#fff}
 .tbtns svg{width:11px;height:11px;stroke-width:1.3}
 .tbtns button svg{fill:none;stroke:currentColor}
-.rsh{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;z-index:5}
-.rsh:after{content:'';position:absolute;right:3px;bottom:3px;width:7px;height:7px;border-right:1.5px solid var(--txt3);border-bottom:1.5px solid var(--txt3)}
+.r{position:absolute;z-index:5}
+.r.s{bottom:0;left:10px;right:10px;height:5px;cursor:ns-resize}
+.r.e{right:0;top:34px;bottom:0;width:5px;cursor:ew-resize}
+.r.w{left:0;top:34px;bottom:0;width:5px;cursor:ew-resize}
+.r.se{bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize}
+.r.se:after{content:'';position:absolute;right:4px;bottom:4px;width:7px;height:7px;border-right:1.5px solid var(--txt3);border-bottom:1.5px solid var(--txt3)}
+.r.sw{bottom:0;left:0;width:14px;height:14px;cursor:nesw-resize}
 .wbody{flex:1;overflow:auto;background:var(--solid);color:var(--txt);position:relative}
-.win.noResize .rsh{display:none}
+.win.noResize .r{display:none}
 #snapzones{position:absolute;inset:0;z-index:800;pointer-events:none}
 #snapzones div{position:absolute;background:rgba(0,120,215,.28);border:2px solid rgba(120,190,255,.8);border-radius:8px;opacity:0;transition:opacity .12s}
 #snapzones div.on{opacity:1}
@@ -893,7 +898,7 @@ function createWindow(app,opts){
     '<div class="tbtns"><button class="mn" title="Свернуть">'+ic('winMin',11)+'</button>'+
     '<button class="mx" title="Развернуть">'+ic('winMax',11)+'</button>'+
     '<button class="cl" title="Закрыть">'+ic('winClose',11)+'</button></div></div>'+
-    '<div class="wbody"></div><div class="rsh"></div>';
+    '<div class="wbody"></div><div class="r e"></div><div class="r w"></div><div class="r s"></div><div class="r sw"></div><div class="r se"></div>';
   const o={id:'w'+Date.now()+Math.random().toString(36).slice(2,6),app,el,x,y,w,h,min:false,max:false,body:$('.wbody',el),title:A.title,data:{}};
   el.__win=o;wins.push(o);
   $('#windows').appendChild(el);
@@ -906,7 +911,7 @@ function createWindow(app,opts){
   $('.mx',el).addEventListener('click',()=>toggleMax(o));
   $('.mn',el).addEventListener('click',()=>minimize(o));
   $('.cl',el).addEventListener('click',()=>closeWin(o));
-  $('.rsh',el).addEventListener('mousedown',e=>resize(o,e));
+  $$('.r',el).forEach(h=>h.addEventListener('mousedown',e=>{e.preventDefault();resize(o,e,h.classList.contains('w')?'w':h.classList.contains('e')?'e':h.classList.contains('sw')?'sw':'se')}));
   el.addEventListener('mousedown',()=>focusWin(o),true);
   focusWin(o);
   renderTaskbar();
@@ -956,15 +961,23 @@ function drag(o,e){
   }
   document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
 }
-function resize(o,e){
+function resize(o,e,dir){
   focusWin(o);
-  const sx=e.clientX,sy=e.clientY,ow=o.w,oh=o.h,ar=area();
+  if(o.max){o.max=false;o.el.classList.remove('max');const a=area();o.x=0;o.y=0;o.w=a.w;o.h=a.h;$('.mx',o.el).innerHTML=ic('winMax',11)}
+  const ar=area(),sx=e.clientX,sy=e.clientY;
+  const ox=o.x,oy=o.y,ow=o.w,oh=o.h,right=ox+ow,bottom=oy+oh;
+  const N=dir.indexOf('n')>=0,S=dir.indexOf('s')>=0,E=dir.indexOf('e')>=0,W=dir.indexOf('w')>=0;
   function mv(ev){
-    o.w=Math.max(260,Math.min(ow+ev.clientX-sx,ar.w-o.x));
-    o.h=Math.max(150,Math.min(oh+ev.clientY-sy,ar.h-o.y));
-    o.el.style.width=o.w+'px';o.el.style.height=o.h+'px';
+    let x=ox,y=oy,w=ow,h=oh;
+    if(E)w=ow+(ev.clientX-sx);
+    if(S)h=oh+(ev.clientY-sy);
+    if(W){x=ox+sx-ev.clientX;if(x<0)x=0;if(x>right-260)x=right-260;w=right-x}
+    if(N){y=oy+sy-ev.clientY;if(y<0)y=0;if(y>bottom-150)y=bottom-150;h=bottom-y}
+    w=Math.max(260,Math.min(w,ar.w-x));h=Math.max(150,Math.min(h,ar.h-y));
+    o.x=x;o.y=y;o.w=w;o.h=h;
+    Object.assign(o.el.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px'});
   }
-  function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up)}
+  function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);window.getSelection().removeAllRanges()}
   document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
 }
 /* snap layouts */
