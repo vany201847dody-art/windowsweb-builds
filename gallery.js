@@ -13,7 +13,7 @@ const BUILDS=[
    note:'Другая архитектура: системные окна почти не работают, Пуск и рабочий стол не собраны. Сохранена как источник идей.'},
   {file:'gigschat.html', st:'bad', badge:'🔴 неудачная', name:'NovaOS (Gigachat)',
    note:'Только базовые окна, оболочки нет: Пуск, панель задач и рабочий стол не реализованы. Мелкая заготовка для проверки.'},
-  {file:'novaos.html', st:'ok', badge:'✅ NovaOS', name:'NovaOS v1.0', linux:true,
+  {file:'novaos.html', st:'ok', badge:'✅ NovaOS', name:'NovaOS v1.0',
    note:'Собственная сборка Vizor (© Vizor 2026), минифицированная версия ветки DeepSeek. Лежала в загрузках как index.html/index-1.html.'},
   {file:'novashell.html', st:'ok', badge:'🟢 линукс', name:'NovaShell — Vizor', linux:true,
    note:'Свой линукс-шелл (© Vizor): верхняя панель, окна, градиентные обои на тему Linux.'}
@@ -39,23 +39,14 @@ function cardHTML(b,$i){
    </div></div>`;
 }
 
-let cur='win';
-const TABS=[['win','Windows 11',BUILDS=>BUILDS.filter(b=>!b.linux)],['lnx','Linux',BUILDS=>BUILDS.filter(b=>b.linux)]];
-
 function render(){
-  const t=TABS.find(x=>x[0]===cur);
-  const list=t[2](BUILDS);
-  grid.innerHTML='<div class="sec"><h2>'+t[1]+'</h2><div class="cg">'+list.map(cardHTML).join('')+'</div></div>';
+  const secs=[['Windows 11',BUILDS.filter(b=>!b.linux)],['Linux',BUILDS.filter(b=>b.linux)]].filter(s=>s[1].length);
+  const all=secs.reduce((a,s)=>a.concat(s[1]),[]);
+  grid.innerHTML=secs.map(s=>'<div class="sec"><h2>'+s[0]+'</h2><div class="cg">'+s[1].map(cardHTML).join('')+'</div></div>').join('');
   grid.querySelectorAll('.card .try').forEach((btn,ci)=>{
-    btn.addEventListener('click',()=>openPrev(list[ci].file));
+    btn.addEventListener('click',()=>openPrev(all[ci].file));
   });
 }
-
-document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{
-  cur=b.dataset.s;
-  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
-  render();
-}));
 
 function openPrev(file){
   const b=BUILDS.find(x=>x.file===file);
