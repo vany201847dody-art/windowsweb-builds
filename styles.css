@@ -4,6 +4,10 @@ body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;background:
 header{padding:34px 22px 18px;text-align:center}
 header h1{font-size:26px;font-weight:600;letter-spacing:.2px}
 header p{color:#9fb3c9;font-size:14px;margin-top:6px}
+#tabs{display:flex;gap:8px;justify-content:center;margin-top:14px}
+#tabs button{background:rgba(255,255,255,.07);color:#9fb3c9;padding:8px 18px;border-radius:9px;border:1px solid rgba(255,255,255,.1)}
+#tabs button:hover{background:rgba(255,255,255,.12)}
+#tabs button.on{background:#2f7fe0;color:#fff;border-color:#2f7fe0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;padding:18px 22px 30px;max-width:1220px;margin:0 auto}
 .sec h2{grid-column:1/-1;font-size:15px;color:#cfe0f2;padding:14px 4px 0;letter-spacing:.3px;display:flex;align-items:center;gap:10px}
 .sec h2:after{content:'';height:1px;flex:1;background:rgba(255,255,255,.12)}

@@ -39,14 +39,23 @@ function cardHTML(b,$i){
    </div></div>`;
 }
 
+let cur='win';
+const TABS=[['win','Windows 11',BUILDS=>BUILDS.filter(b=>!b.linux)],['lnx','Linux',BUILDS=>BUILDS.filter(b=>b.linux)]];
+
 function render(){
-  const secs=[['Windows 11',BUILDS.filter(b=>!b.linux)],['Linux',BUILDS.filter(b=>b.linux)]].filter(s=>s[1].length);
-  const all=secs.reduce((a,s)=>a.concat(s[1]),[]);
-  grid.innerHTML=secs.map(s=>'<div class="sec"><h2>'+s[0]+'</h2><div class="cg">'+s[1].map(cardHTML).join('')+'</div></div>').join('');
+  const t=TABS.find(x=>x[0]===cur);
+  const list=t[2](BUILDS);
+  grid.innerHTML='<div class="sec"><h2>'+t[1]+'</h2><div class="cg">'+list.map(cardHTML).join('')+'</div></div>';
   grid.querySelectorAll('.card .try').forEach((btn,ci)=>{
-    btn.addEventListener('click',()=>openPrev(all[ci].file));
+    btn.addEventListener('click',()=>openPrev(list[ci].file));
   });
 }
+
+document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{
+  cur=b.dataset.s;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  render();
+}));
 
 function openPrev(file){
   const b=BUILDS.find(x=>x.file===file);
