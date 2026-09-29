@@ -8,7 +8,7 @@ const BUILDS=[
   {file:'novaos.html', st:'ok', badge:'✅ NovaOS', name:'NovaOS v1.0',
    note:'Собственная сборка Vizor (© Vizor 2026), минифицированная версия ветки DeepSeek. Лежала в загрузках как index.html/index-1.html.'},
   {file:'novashell.html', st:'wip', badge:'🟡 шелл', name:'NovaShell — Vizor',
-   note:'Небольшой концепт-шелл: верхняя панель, окна, градиентные обои. Скорее набросок интерфейса, чем рабочая ОС.'},
+   note:'Свой концепт-шелл (© Vizor): верхняя панель, окна, градиентные обои. Скорее набросок интерфейса, чем рабочая ОС.'},
   {file:'DEEPSEEK.html', st:'wip', badge:'🟡 рабочий', name:'NovaOS 1.0 (DeepSeek)',
    note:'Отсюда портированы Банк/QR/Диктофон/Заметки/Игры/Мировые часы. Сама по себе сырая: эмодзи вместо иконок, нет доработок оболочки, поиск и Пуск местами не доделаны.'},
   {file:'deepseek.html', st:'bad', badge:'🔴 неудачная', name:'GoodWin 11 (DeepSeek)',
