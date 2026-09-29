@@ -3509,6 +3509,112 @@ winver:{title:'О программе',icon:'pc',color:'#8ab4f8',w:440,h:300,kw:'
   if(PINNED.indexOf('bank')<0)PINNED.push('bank');
 })();
 
+/* ---------- вирус.exe (розыгрыш только внутри фейковой ОС, реальную систему не трогает) ---------- */
+(function(){
+  const V={on:false,step:0,timers:[],pops:[]};
+  const rand=a=>a[Math.floor(Math.random()*a.length)];
+  const SID='virStyle';
+  (function css(){
+    if($('#'+SID))return;
+    const st=document.createElement('style');st.id=SID;st.textContent=
+      '.vpscan{font-family:Consolas,monospace;font-size:13px;padding:14px}'+
+      '.vpscan .ln{opacity:.85;margin:4px 0}'+
+      '.vpscan .bar{height:14px;border-radius:7px;background:var(--field);overflow:hidden;margin:8px 0}'+
+      '.vpscan .fill{height:100%;width:0;background:var(--accent);transition:width .2s}'+
+      '.vpop{position:fixed;z-index:9998;width:330px;background:var(--surface);border:1px solid #e33;border-radius:6px;box-shadow:0 10px 34px rgba(0,0,0,.45);font-size:12px}'+
+      '.vpop .vh{background:#c42b1c;color:#fff;padding:8px 12px;font-weight:600;border-radius:5px 5px 0 0}'+
+      '.vpop .vb{padding:12px;color:var(--txt)}.vpop .vb button{margin-top:10px}';
+    document.head.appendChild(st);
+  })();
+  function popup(){
+    const t=rand(['Прекращена работа программы','Системная ошибка','Критическая ошибка','Дисковый апокалипсис']);
+    const m=rand(['explorer.exe','taskhost.exe','банк.exe','ты.exe','nu-jnyj_.dll','НЕ ЧИТАЙ ЭТО.txt','файл недоступен, и это к лучшему']);
+    const d=document.createElement('div');d.className='vpop';
+    d.innerHTML='<div class="vh">'+t+'</div><div class="vb"><div>'+m+'</div><button class="tbtn">OK</button></div>';
+    d.style.left=(10+Math.random()*(innerWidth-380))+'px';
+    d.style.top=(10+Math.random()*innerHeight*0.55)+'px';
+    V.pops.push(d);
+    d.querySelector('button').onclick=()=>{d.remove()};
+    setTimeout(()=>{d.remove()},4500);
+    document.body.appendChild(d);
+  }
+  function havoc(){
+    if(!V.on)return;
+    V.step++;
+    if(V.step>=12){V.big=true;takeover();return}
+    const acts=[
+      ()=>{const list=wins.filter(w=>w.app!=='virus');if(list.length){try{closeWin(rand(list))}catch(e){}}},
+      ()=>{const pool=ALLAPPS.filter(a=>a!=='virus');try{createWindow(rand(pool))}catch(e){}},
+      ()=>{toast('bin','вирус.exe',rand(['HY!','АХАХА','Я ЗДЕСЬ','ВЫЗДОРАВЛИВАЙТЕ','ПЕЧЕНЬКИ УКРАДЕНЫ']))},
+      ()=>{const w=wins[Math.floor(Math.random()*wins.length)];if(w){const a=area();w.x=Math.random()*(a.w-260);w.y=Math.random()*(a.h-140);w.el.style.left=w.x+'px';w.el.style.top=w.y+'px'}},
+      ()=>popup(),
+      ()=>{document.body.style.filter=Math.random()<.5?'invert(1)':'hue-rotate(120deg)';setTimeout(()=>document.body.style.filter='',600)}
+    ];
+    try{acts[Math.floor(Math.random()*acts.length)]()}catch(e){}
+  }
+  function takeover(){
+    if(V.big)return;V.big=true;
+    const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#000;color:#ff2b2b;font-family:Consolas,monospace;display:flex;align-items:center;justify-content:center;font-size:26px;text-align:center;padding:30px';
+    document.body.appendChild(ov);
+    let n=0;
+    const load=setInterval(()=>{
+      n+=2;ov.textContent='ЗАГРУЗКА МОДУЛЯ СТРАХА '+Math.min(n,99)+'%';
+      if(n>=99){clearInterval(load);ov.textContent='ВИРУС ПОБЕДИЛ. ВЫ ТЕПЕРЬ ЧАСТЬ СЕТИ ПЕЧЕНЕК';
+        setTimeout(()=>{ov.remove();bsod()},1700)}
+    },60);
+  }
+  function bsod(){
+    const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:99999;background:#1073e5;color:#fff;font-family:Consolas,monospace;padding:60px;font-size:15px';
+    d.innerHTML='<div style="font-size:96px;font-weight:600">:(</div><div style="max-width:640px;line-height:1.5;margin-top:20px">Ваш компьютер столкнулся с проблемой и требует перезагрузки. Синий несчастный экран благодарит вас за внимание.</div><div style="margin-top:40px;opacity:.75">СБОР СВЕДЕНИЙ ОБ ОШИБКЕ: <span data-p>0%</span></div><div style="opacity:.6;margin-top:10px">Код остановки: SYSTEM_PRETTY_SOON_FAILED</div>';
+    document.body.appendChild(d);
+    let p=0;
+    const iv=setInterval(()=>{
+      p+=3+Math.round(Math.random()*9);const e=d.querySelector('[data-p]');if(e)e.textContent=Math.min(100,p)+'%';
+      if(p>=100){clearInterval(iv);setTimeout(()=>{d.remove();V.stop();fakeBoot()},600)}
+    },220);
+  }
+  function fakeBoot(){
+    const st=document.createElement('style');st.textContent='.vspin{width:28px;height:28px;border-radius:50%;border:3px solid #333;border-top-color:#fff;animation:vspin 1s linear infinite}@keyframes vspin{to{transform:rotate(360deg)}}';document.head.appendChild(st);
+    const b=document.createElement('div');b.style.cssText='position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;color:#fff;font-family:Consolas,monospace';
+    b.innerHTML='<div style="font-size:15px">Живой пень 11</div><div class="vspin"></div>';
+    document.body.appendChild(b);
+    setTimeout(()=>{b.remove();lock();toast('shield','вирус.exe','Перезагрузка завершена. Я пока прилёг.')},2200);
+  }
+  V.stop=()=>{V.on=false;V.big=false;V.step=0;V.timers.forEach(clearTimeout);V.timers=[];
+    V.pops.forEach(p=>{try{p.remove()}catch(e){}});V.pops=[];
+    const s=$('#'+SID);if(s)s.remove();};
+  APPS.virus={title:'вирус.exe',icon:'bin',color:'#c42b1c',w:560,h:400,kw:'virus вирус антивирус вирус.exe',build(o){
+    const wb=o.body,wb0=wb;
+    let prog=0,scan=null,files=['system32.exe','nahui.dll','печенька.png','банк.exe','driver_ojjo.sys','вирус.dll','наивность.dat'];
+    function cure(){
+      V.stop();toast('shield','вирус.exe','Лечение завершено. ПК снова живой.');closeWin(o);
+    }
+    wb.innerHTML='<div class="vpscan"><div class="ln">вирус.exe — продвинутый антивирус. Версия 6.6.6.</div><div class="bar"><div class="fill" data-f></div></div><div class="ln" data-t>Подготовка модулей…</div></div>';
+    const fill=wb.querySelector('[data-f]'),tt=wb.querySelector('[data-t]');
+    scan=setInterval(()=>{
+      if(!wb0.isConnected){clearInterval(scan);return}
+      prog+=4+Math.floor(Math.random()*7);
+      fill.style.width=Math.min(100,prog)+'%';
+      if(prog<60)tt.textContent='Сканирование: '+files[Math.floor(prog/15%files.length)]+' — ок';
+      else if(prog<90)tt.textContent='Пристальный анализ: '+files[Math.floor(prog/8%files.length)]+' — ПОДОЗРИТЕЛЬНО';
+      else tt.textContent='ОБНАРУЖЕНО НАСЕКОМОЕ: ВЫ';
+      if(prog>=100){
+        clearInterval(scan);
+        wb.innerHTML='<div class="vpscan"><div class="ln" style="color:#e33;font-weight:700">ВНИМАНИЕ: найдена бомба замедленного счастья.</div>'+
+          '<div class="ln">Вирус запущен. Окна сводит, печеньки уходят.</div>'+
+          '<div class="ln">Лечение: жмите «Обезвредить» ниже или откройте вирус.exe заново.</div>'+
+          '<div style="display:flex;gap:8px;margin-top:12px"><button class="tbtn" data-cure="1">Обезвредить</button></div></div>';
+        wb.querySelector('[data-cure]').onclick=cure;
+        V.on=true;
+        V.timers.push(setInterval(havoc,950));
+        V.timers.push(setTimeout(()=>{if(V.on&&!V.big){takeover()}},10000));
+      }
+    },200);
+  }};
+  if(ALLAPPS.indexOf('virus')<0)ALLAPPS.push('virus');
+  deskIcons.push({id:'d14',n:'вирус.exe',i:'bin',app:'virus'});
+})();
+
 /* ---------- старт системы ---------- */
 document.addEventListener('mousemove',e=>{flyX=e.clientX;flyY=e.clientY;if($('#snapfly').style.display==='flex')flyAutoHide()},{passive:true});
 document.addEventListener('mousedown',e=>{
